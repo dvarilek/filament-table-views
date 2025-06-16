@@ -1,0 +1,57 @@
+{
+  "name": "dvarilek/filament-table-views",
+  "description": "Configurable Views for persisting filters, sorting and grouping in Filament Table.",
+  "keywords": [
+    "filament",
+    "select",
+    "table"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Dvarilek\\FilamentTableViews\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Dvarilek\\FilamentTableViews\\Tests\\": "tests"
+    }
+  },
+  "authors": [
+    {
+      "name": "David Vařílek",
+      "email": "davan@outlook.cz"
+    }
+  ],
+  "require": {
+    "php": "^8.2|^8.3|^8.4",
+    "spatie/laravel-package-tools": "^1.18",
+    "filament/filament": "^3.0",
+    "stancl/virtualcolumn": "^1.5"
+  },
+  "require-dev": {
+    "pestphp/pest": "^2.31|^3.0.0",
+    "orchestra/testbench": "^8.0|^9.0",
+    "phpstan/phpstan": "^2.1",
+    "pestphp/pest-plugin-livewire": "^3.0"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Dvarilek\\FilamentTableViews\\FilamentTableViewsServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "stan": "vendor/bin/phpstan analyse src --level=6",
+    "test-coverage": "vendor/bin/pest --coverage"
+  },
+  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
