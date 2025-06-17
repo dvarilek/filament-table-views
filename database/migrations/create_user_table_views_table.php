@@ -11,24 +11,25 @@ class CreateCustomTableViewsTable extends Migration
 {
     public function up(): void
     {
-        Schema::create('user_table_views', function (Blueprint $table) {
+        Schema::create(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'), function (Blueprint $table) {
             $table->id();
 
-            $table->string('name');
+            $table->string('name', 255);
             $table->text('description')->nullable();
-            $table->string('icon');
+            $table->string('icon', 255);
 
-            config('filament-table-views.user-table-view-model.color_attribute_is_json', false)
+            config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)
                 ? $table->json('color')
-                : $table->string('color');
+                : $table->string('color', 255);
 
             $table->boolean('is_public')->default(false);
             $table->boolean('is_favorite')->default(false);
             $table->boolean('is_globally_highlighted')->default(false);
 
-            $table->foreignIdFor(config('auth.providers.users.model', User::class))->constrained()->cascadeOnDelete();
+            $table->morphs('owner');
+            $table->string('model_type', 255);
 
-            $table->json('query_constraint_data');
+            $table->json('query_constrains');
 
             $table->timestamps();
         });
@@ -36,6 +37,6 @@ class CreateCustomTableViewsTable extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('user_table_views');
+        Schema::dropIfExists(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'));
     }
 }

@@ -8,7 +8,7 @@ enum StoredQueryConstraintType: string
 {
     case FILTERS = 'filters';
 
-    case SORTS = 'sorts';
+    case SORT = 'sort';
 
-    case GROUPINGS = 'groupings';
+    case GROUP = 'group';
 }

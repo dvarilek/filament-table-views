@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Foundation\Auth\User;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Stancl\VirtualColumn\VirtualColumn;
 
 /**
@@ -18,19 +17,21 @@ use Stancl\VirtualColumn\VirtualColumn;
  * @property bool $is_favorite
  * @property bool $is_globally_highlighted
  * @property mixed $owner_id
+ * @property class-string<\Illuminate\Contracts\Auth\Authenticatable & \Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership> $owner_type
+ * @property class-string<\Illuminate\Database\Eloquent\Model> $model_type
  *
  * @property \Illuminate\Database\Eloquent\Model $owner
  *
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon | null $created_at
+ * @property \Illuminate\Support\Carbon | null $updated_at
  *
  * @property array{
- *      filters: list<array{name: string, value: mixed}>,
- *      sorts: list<array{name: string, direction: string}>,
- *      groupings: list<array{name: string}>
- *  } $query_constraint_data
+ *      filters: list<array{name: string, value: mixed}> | null,
+ *      sort: list<array{name: string, direction: string}> | null,
+ *      group: list<array{name: string}> | null
+ *  } $query_constrains
  */
-class UserTableView extends Model
+class CustomTableView extends Model
 {
     use VirtualColumn;
 
@@ -46,28 +47,33 @@ class UserTableView extends Model
         'is_favorite',
         'is_globally_highlighted',
         'owner_id',
-        'query_constraint_data'
+        'owner_type',
+        'model_type',
+        'query_constrains'
     ];
 
     public function initializeTableView(): void
     {
-        if (config('filament-table-views.user-table-view-model.color_attribute_is_json', false)) {
+        if (config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)) {
             $this->mergeCasts([
                 'color' => 'array'
             ]);
         }
 
-        $this->table = config('filament-table-views.user-table-view-model.table', 'user_table_views');
+        $this->table = config('filament-table-views.custom_table_view_model.table', 'custom_table_views');
     }
 
-    public function owner(): BelongsTo
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo<\Illuminate\Contracts\Auth\Authenticatable & \Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership, self>
+     */
+    public function owner(): MorphTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', User::class), 'owner_id');
+        return $this->morphTo();
     }
 
     public static function getDataColumn(): string
     {
-        return 'query_constraint_data';
+        return 'query_constrains';
     }
 
     /**
@@ -85,6 +91,7 @@ class UserTableView extends Model
             'is_favorite',
             'is_globally_highlighted',
             'owner_id',
+            'owner_type',
             'created_at',
             'updated_at',
         ];

@@ -2,7 +2,7 @@
 
 return [
 
-    'user-table-view-model' => [
+    'custom_table_view_model' => [
 
         /**
          * Indicates whether the table view's color attribute is stored as JSON.
@@ -12,7 +12,7 @@ return [
         /**
          * The database table used to store user table views.
          */
-        'table' => 'user_table_views',
+        'table' => 'custom_table_views',
 
     ],
 
