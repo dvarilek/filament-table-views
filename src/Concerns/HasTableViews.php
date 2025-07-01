@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Concerns;
 
+use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Livewire\Attributes\Computed;
@@ -44,6 +45,18 @@ trait HasTableViews
         return [
 
         ];
+    }
+
+    /**
+     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     */
+    public function getDefaultTableViews(): array
+    {
+        return collect($this->getTableViews())
+            ->mapWithKeys(fn (TableView $tableView) => [
+                $tableView->getLabel() => $tableView
+            ])
+            ->toArray();
     }
 
     /**

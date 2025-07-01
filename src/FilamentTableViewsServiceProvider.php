@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews;
 
-use App\Filament\Clusters\Products\Resources\ProductResource\Pages\ListProducts;
-use Dvarilek\FilamentTableViews\Contracts\HasTableViews;
 use Filament\Support\Facades\FilamentView;
-use Filament\Tables\View\TablesRenderHook;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\View\View;
+use Filament\View\PanelsRenderHook;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -26,7 +22,7 @@ class FilamentTableViewsServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         FilamentView::registerRenderHook(
-            TablesRenderHook::TOOLBAR_BEFORE,
+            PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE,
             fn () => view('filament-table-views::table-views-toolbar'),
         );
     }

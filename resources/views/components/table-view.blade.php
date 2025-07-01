@@ -6,12 +6,14 @@
 @props([
     'tableView',
     'key',
+    'isActive' => false
 ])
 
 @php
     $isActive = $this->activeTableViewKey === $key;
 
     $label = $tableView->getLabel();
+    $tooltip = $tableView->getTooltip();
 
     $icon = $tableView->getIcon();
     $iconPosition = $tableView->getIconPosition();
@@ -19,31 +21,45 @@
     $color = $tableView->getColor();
 
     $iconClasses = \Illuminate\Support\Arr::toCssClasses([
-        'fi-table-views-item h-4 w-4',
+        'fi-table-views-item h-5 w-5',
         match ($iconSize) {
             IconSize::Small => 'h-4 w-4',
             IconSize::Medium => 'h-5 w-5',
             IconSize::Large => 'h-6 w-6',
             default => $iconSize,
-        },
-        match ($color) {
-            'gray' => 'text-gray-400 dark:text-gray-500',
-            default => 'text-custom-500',
-        },
+        }
     ]);
 @endphp
 
 <button
-    x-on:click="$wire.call('toggleActiveTableView', '{{ $key }}')"
     {{
-        $tableView
-            ->getExtraAttributeBag()
+        $attributes
+            ->merge([
+                'x-on:click' => '$wire.call(\'toggleActiveTableView\', ' . \Illuminate\Support\Js::from($key) . ')',
+                'x-tooltip' => filled($tooltip)
+                    ? '{
+                        content: ' . \Illuminate\Support\Js::from($tooltip) . ',
+                        theme: \$store.theme
+                    }'
+                    : null,
+            ], false)
             ->class([
-                'fi-table-view px-1.5 min-w-[theme(spacing.5)] py-0.5 flex items-center gap-x-1.5'
+                'min-w-[theme(spacing.5)] flex items-center gap-x-1.5 outline-none transition duration-75 min-h-8 rounded-lg px-2.5 py-1.5
+                hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus-visible:bg-white/10
+                text-sm font-medium text-gray-600 hover:text-gray-700 focus-visible:text-gray-800 dark:text-white'
+            ])
+            ->style([
+                \Filament\Support\get_color_css_variables(
+                    $color,
+                    shades: [
+                        600,
+                    ],
+                    alias: 'tableView',
+                ),
             ])
     }}
 >
-    @if ($iconPosition === IconPosition::Before)
+    @if ($icon && $iconPosition === IconPosition::Before)
         <x-filament::icon
             :attributes="
                 \Filament\Support\prepare_inherited_attributes(
@@ -56,11 +72,11 @@
         />
     @endif
 
-    <span class="truncate">
+    <span class="p-0.5 truncate">
         {{ $label }}
     </span>
 
-    @if ($iconPosition === IconPosition::After)
+    @if ($icon && $iconPosition === IconPosition::After)
         <x-filament::icon
             :attributes="
                 \Filament\Support\prepare_inherited_attributes(
