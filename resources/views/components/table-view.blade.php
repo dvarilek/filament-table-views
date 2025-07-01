@@ -10,8 +10,6 @@
 ])
 
 @php
-    $isActive = $this->activeTableViewKey === $key;
-
     $label = $tableView->getLabel();
     $tooltip = $tableView->getTooltip();
 
@@ -21,7 +19,7 @@
     $color = $tableView->getColor();
 
     $iconClasses = \Illuminate\Support\Arr::toCssClasses([
-        'fi-table-views-item h-5 w-5',
+        'h-5 w-5',
         match ($iconSize) {
             IconSize::Small => 'h-4 w-4',
             IconSize::Medium => 'h-5 w-5',
@@ -42,50 +40,59 @@
                         theme: \$store.theme
                     }'
                     : null,
+                'tabindex' => '-1'
             ], false)
             ->class([
-                'min-w-[theme(spacing.5)] flex items-center gap-x-1.5 outline-none transition duration-75 min-h-8 rounded-lg px-2.5 py-1.5
-                hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus-visible:bg-white/10
-                text-sm font-medium text-gray-600 hover:text-gray-700 focus-visible:text-gray-800 dark:text-white'
+                 'fi-table-views-view-item min-w-[theme(spacing.5)] p-1'
             ])
+            // TODO: Handle the border using tailwind, couldn't get it to work
             ->style([
                 \Filament\Support\get_color_css_variables(
                     $color,
-                    shades: [
-                        600,
-                    ],
+                    shades: [600],
                     alias: 'tableView',
                 ),
+                "border-bottom-color: rgb(var(--c-600)); border-bottom-width: 2px;" => $isActive,
+                "border-bottom-color: transparent; border-bottom-width: 2px;" => ! $isActive,
             ])
     }}
 >
-    @if ($icon && $iconPosition === IconPosition::Before)
-        <x-filament::icon
-            :attributes="
-                \Filament\Support\prepare_inherited_attributes(
-                    new \Illuminate\View\ComponentAttributeBag([
-                        'icon' => $icon,
-                    ])
-                )
-                ->class([$iconClasses])
-            "
-        />
-    @endif
+    <div
+        tabindex="0"
+        class="
+            fi-table-views-view-item-inner flex items-center gap-x-1.5 transition duration-75 min-h-8 px-2 py-1 text-md font-normal
+            hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus:bg-white/10
+            dark:focus-visible:bg-white/10 rounded-lg outline-none
+        "
+    >
+        @if ($icon && $iconPosition === IconPosition::Before)
+            <x-filament::icon
+                :attributes="
+                    \Filament\Support\prepare_inherited_attributes(
+                        new \Illuminate\View\ComponentAttributeBag([
+                            'icon' => $icon,
+                        ])
+                    )
+                    ->class([$iconClasses])
+                "
+            />
+        @endif
 
-    <span class="p-0.5 truncate">
-        {{ $label }}
-    </span>
+        <span class="p-0.5 truncate">
+            {{ $label }}
+        </span>
 
-    @if ($icon && $iconPosition === IconPosition::After)
-        <x-filament::icon
-            :attributes="
-                \Filament\Support\prepare_inherited_attributes(
-                    new \Illuminate\View\ComponentAttributeBag([
-                        'icon' => $icon,
-                    ])
-                )
-                ->class([$iconClasses])
-            "
-        />
-    @endif
+        @if ($icon && $iconPosition === IconPosition::After)
+            <x-filament::icon
+                :attributes="
+                    \Filament\Support\prepare_inherited_attributes(
+                        new \Illuminate\View\ComponentAttributeBag([
+                            'icon' => $icon,
+                        ])
+                    )
+                    ->class([$iconClasses])
+                "
+            />
+        @endif
+    </div>
 </button>

@@ -85,7 +85,7 @@ class TableView extends Component
      */
     public function getColor(): string|array|null
     {
-        return $this->evaluate($this->color);
+        return $this->evaluate($this->color) ?? 'primary';
     }
 
     public function modifyQuery(Builder $query): Builder

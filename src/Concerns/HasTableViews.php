@@ -22,8 +22,6 @@ trait HasTableViews
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
-        dd($tableViewKey);
-
         if ($this->activeTableViewKey === $tableViewKey) {
             $this->activeTableViewKey = null;
 
@@ -91,12 +89,11 @@ trait HasTableViews
 
     public function resetTableQueryConstraints(): void
     {
-        $this->tableFilters
-            = $this->tableSortDirection
-            = $this->tableSortColumn
-            = $this->tableGrouping
-            = $this->tableGroupingDirection
-            = $this->tableSearch
-            = null;
+        $this->tableFilters = [];
+        $this->tableSearch = '';
+        $this->tableSortDirection = null;
+        $this->tableSortColumn = null;
+        $this->tableGrouping = null;
+        $this->tableGroupingDirection = null;
     }
 }

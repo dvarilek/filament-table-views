@@ -8,7 +8,7 @@
 
     @if (filled($defaultTableViews) || filled($customTableViews))
         <nav
-            class="fi-table-views-toolbar flex flex-1 items-center gap-x-3 overflow-x-auto -mb-4"
+            class="fi-table-views-toolbar flex flex-1 items-center gap-x-2 overflow-x-auto -mb-6"
         >
             @foreach($defaultTableViews as $key => $tableView)
                 <x-filament-table-views::table-view
