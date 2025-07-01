@@ -19,12 +19,9 @@ use Stancl\VirtualColumn\VirtualColumn;
  * @property mixed $owner_id
  * @property class-string<\Illuminate\Contracts\Auth\Authenticatable & \Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership> $owner_type
  * @property class-string<\Illuminate\Database\Eloquent\Model> $model_type
- *
  * @property \Illuminate\Database\Eloquent\Model $owner
- *
  * @property \Illuminate\Support\Carbon | null $created_at
  * @property \Illuminate\Support\Carbon | null $updated_at
- *
  * @property array{
  *      filters: list<array{name: string, value: mixed}> | null,
  *      sort: list<array{name: string, direction: string}> | null,
@@ -49,14 +46,14 @@ class CustomTableView extends Model
         'owner_id',
         'owner_type',
         'model_type',
-        'query_constrains'
+        'query_constrains',
     ];
 
     public function initializeTableView(): void
     {
         if (config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)) {
             $this->mergeCasts([
-                'color' => 'array'
+                'color' => 'array',
             ]);
         }
 

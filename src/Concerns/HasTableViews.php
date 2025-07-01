@@ -15,14 +15,10 @@ use Livewire\Attributes\Url;
  */
 trait HasTableViews
 {
-
     #[Url(as: 'tableView')]
     public ?string $activeTableViewKey = null;
 
-    public function bootedInteractsWithTableViews(): void
-    {
-
-    }
+    public function bootedInteractsWithTableViews(): void {}
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
@@ -54,7 +50,7 @@ trait HasTableViews
     {
         return collect($this->getTableViews())
             ->mapWithKeys(fn (TableView $tableView) => [
-                $tableView->getLabel() => $tableView
+                $tableView->getLabel() => $tableView,
             ])
             ->toArray();
     }
@@ -82,12 +78,12 @@ trait HasTableViews
         return $tableViews
             ->where('model_type', static::getResource()::getModel())
             ->get()
-            ->sort(fn(CustomTableView $a, CustomTableView $b): int => [
-                    !$a->isGloballyHighlighted(),
-                    !$a->isFavorite(),
-                ] <=> [
-                    !$b->isGloballyHighlighted(),
-                    !$b->isFavorite(),
+            ->sort(fn (CustomTableView $a, CustomTableView $b): int => [
+                ! $a->isGloballyHighlighted(),
+                ! $a->isFavorite(),
+            ] <=> [
+                ! $b->isGloballyHighlighted(),
+                ! $b->isFavorite(),
             ])
             ->keyBy($tableViews->getModel()->getKeyName())
             ->toArray();
