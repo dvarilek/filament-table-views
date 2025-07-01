@@ -58,7 +58,7 @@ trait HasTableViews
     /**
      * @return array<mixed, \Dvarilek\FilamentTableViews\Models\CustomTableView>
      */
-    #[Computed]
+    #[Computed(persist: true, key: 'filament-table-views::custom-table-views-computed-property')]
     public function getCustomTableViews(): array
     {
         /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
