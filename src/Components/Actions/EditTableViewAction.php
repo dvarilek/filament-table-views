@@ -14,6 +14,8 @@ use Filament\Tables\Contracts\HasTable;
 
 class EditTableViewAction extends TableViewAction
 {
+    protected ?Closure $modifyShouldUpdateViewFormComponentUsing = null;
+
     /**
      * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification | null
      */
@@ -86,6 +88,13 @@ class EditTableViewAction extends TableViewAction
         });
     }
 
+    public function shouldUpdateFormComponent(Closure $callback): static
+    {
+        $this->modifyShouldUpdateViewFormComponentUsing = $callback;
+
+        return $this;
+    }
+
     /**
      * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification  $callback
      * @return $this
@@ -104,13 +113,31 @@ class EditTableViewAction extends TableViewAction
             ->success();
     }
 
-    public function getDefaultFormFields(): array
+    /**
+     * @return list<\Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
+     */
+    public function getDefaultFormComponents(): array
     {
-        $components = parent::getDefaultFormFields();
+        return [
+            ...parent::getDefaultFormComponents(),
+            $this->getShouldUpdateViewFormComponent(),
+        ];
+    }
 
-        $components[] = Toggle::make('should_update_view')
-            ->label(__('filament-table-views::toolbar.actions.edit-table-view.notifications.should_update_view'));
+    public function getShouldUpdateViewFormComponent(): ?Field
+    {
+        $component = Toggle::make('should_update_view')
+            ->label(__('filament-table-views::toolbar.actions.edit-table-view.form.should_update_view'));
 
-        return $components;
+        if ($this->modifyNameFormComponentUsing) {
+            $component = $this->evaluate($this->modifyNameFormComponentUsing, [
+                'field' => $component,
+                'component' => $component,
+            ], [
+                Toggle::class => $component,
+            ]) ?? null;
+        }
+
+        return $component;
     }
 }
