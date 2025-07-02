@@ -28,7 +28,7 @@ class CreateCustomTableViewsTable extends Migration
             $table->morphs('owner');
             $table->string('model_type', 255);
 
-            $table->json('query_constrains');
+            $table->json('view_state');
 
             $table->timestamps();
         });

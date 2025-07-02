@@ -9,8 +9,7 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 
@@ -24,13 +23,15 @@ trait HasTableViews
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
+        $this->resetTableQueryConstraints();
+
         if ($this->activeTableViewKey === $tableViewKey) {
             $this->activeTableViewKey = null;
 
-            $this->resetTableQueryConstraints();
-        } else {
-            $this->activeTableViewKey = $tableViewKey;
+            return;
         }
+
+        $this->activeTableViewKey = $tableViewKey;
     }
 
     /**
@@ -43,14 +44,28 @@ trait HasTableViews
         ];
     }
 
+    public function createTableViewAction(): Action
+    {
+        return CreateTableViewAction::make()
+            ->model($this->getViewModelType());
+    }
+
+    /**
+     * @return class-string<\Illuminate\Database\Eloquent\Model>
+     */
+    protected static function getViewModelType(): string
+    {
+        return static::getResource()::getModel();
+    }
+
     /**
      * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
      */
     public function getDefaultTableViews(): array
     {
         return collect($this->getTableViews())
-            ->mapWithKeys(fn (TableView $tableView) => [
-                $tableView->getLabel() => $tableView,
+            ->mapWithKeys(static fn (TableView $tableView): array => [
+                $tableView->getLabel() => $tableView
             ])
             ->toArray();
     }
@@ -78,35 +93,25 @@ trait HasTableViews
         return $tableViews
             ->where('model_type', static::getResource()::getModel())
             ->get()
-            ->sort(fn (CustomTableView $a, CustomTableView $b): int => [
+            ->sort(static fn (CustomTableView $a, CustomTableView $b): int => [
                 ! $a->isGloballyHighlighted(),
                 ! $a->isFavorite(),
             ] <=> [
                 ! $b->isGloballyHighlighted(),
                 ! $b->isFavorite(),
             ])
-            ->keyBy($tableViews->getModel()->getKeyName())
+            ->mapWithKeys(static fn (CustomTableView $customTableView): array => [
+                $customTableView->getKey() => $customTableView->toTableView()
+            ])
             ->toArray();
-    }
-
-    public function createTableViewAction(): Action
-    {
-        return CreateTableViewAction::make()
-            ->model($this->getViewModelType());
-    }
-
-    /**
-     * @return class-string<\Illuminate\Database\Eloquent\Model>
-     */
-    protected static function getViewModelType(): string
-    {
-        return static::getResource()::getModel();
     }
 
     public function resetTableQueryConstraints(): void
     {
-        $this->tableFilters = [];
-        $this->tableSearch = '';
+        $this->removeTableFilters();
+        $this->resetTableSearch();
+        $this->resetTableColumnSearches();
+
         $this->tableSortDirection = null;
         $this->tableSortColumn = null;
         $this->tableGrouping = null;

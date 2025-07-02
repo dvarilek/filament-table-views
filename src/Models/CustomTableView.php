@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Models;
 
+use Dvarilek\FilamentTableViews\Contracts\ToTableView;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Stancl\VirtualColumn\VirtualColumn;
+use Dvarilek\FilamentTableViews\Components\Table\TableView;
+use Dvarilek\FilamentTableViews\DTO\TableViewState;
 
 /**
  * @property string $name
@@ -22,18 +24,10 @@ use Stancl\VirtualColumn\VirtualColumn;
  * @property \Illuminate\Database\Eloquent\Model $owner
  * @property \Illuminate\Support\Carbon | null $created_at
  * @property \Illuminate\Support\Carbon | null $updated_at
- * @property array{
- *      filters: list<array{name: string, operator: string, value: mixed}> | null,
- *      sort: list<array{name: string, direction: string}> | null,
- *      group: list<array{name: string, direction: string}> | null,
- *      search: string,
- *      activeTab: string
- *  } $query_constrains
+ * @property \Dvarilek\FilamentTableViews\DTO\TableViewState $view_state
  */
-class CustomTableView extends Model
+class CustomTableView extends Model implements ToTableView
 {
-    use VirtualColumn;
-
     /**
      * @var list<string>
      */
@@ -48,7 +42,11 @@ class CustomTableView extends Model
         'owner_id',
         'owner_type',
         'model_type',
-        'query_constrains',
+        'view_state',
+    ];
+
+    protected $casts = [
+        'view_state' => TableViewState::class,
     ];
 
     public function initializeTableView(): void
@@ -70,32 +68,6 @@ class CustomTableView extends Model
         return $this->morphTo();
     }
 
-    public static function getDataColumn(): string
-    {
-        return 'query_constrains';
-    }
-
-    /**
-     * @return list<string>
-     */
-    public static function getCustomColumns(): array
-    {
-        return [
-            'id',
-            'name',
-            'description',
-            'icon',
-            'color',
-            'is_public',
-            'is_favorite',
-            'is_globally_highlighted',
-            'owner_id',
-            'owner_type',
-            'created_at',
-            'updated_at',
-        ];
-    }
-
     public function isPublic(): bool
     {
         return $this->is_public;
@@ -109,5 +81,12 @@ class CustomTableView extends Model
     public function isGloballyHighlighted(): bool
     {
         return $this->is_globally_highlighted;
+    }
+
+    public function toTableView(): TableView
+    {
+        return TableView::make($this->name)
+            ->icon($this->icon)
+            ->color($this->color);
     }
 }

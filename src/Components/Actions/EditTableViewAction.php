@@ -7,6 +7,8 @@ namespace Dvarilek\FilamentTableViews\Components\Actions;
 use Closure;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
+use Dvarilek\FilamentTableViews\DTO\TableViewState;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
@@ -67,7 +69,7 @@ class EditTableViewAction extends TableViewAction
             }
 
             if ($data['should_update_view'] ?? null) {
-                $data['query_constraints'] = $action->extractQueryConstraints($livewire);
+                $data['view_state'] = TableViewState::fromLivewire($livewire);
             }
 
             unset($data['should_update_view']);

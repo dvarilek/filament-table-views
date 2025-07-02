@@ -7,6 +7,7 @@ namespace Dvarilek\FilamentTableViews\Components\Actions;
 use Closure;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
+use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
@@ -67,7 +68,7 @@ class CreateTableViewAction extends TableViewAction
             $tableView = $user->tableViews()->create([
                 ...$data,
                 'model_type' => $viewModelType,
-                'query_constraints' => $action->extractQueryConstraints($livewire),
+                'view_state' => TableViewState::fromLivewire($livewire),
             ]);
 
             $notification = $this->getAfterTableViewCreatedNotification();
@@ -89,22 +90,6 @@ class CreateTableViewAction extends TableViewAction
         $this->modifyAfterTableViewCreatedNotificationUsing = $callback;
 
         return $this;
-    }
-
-    /**
-     * @return array{
-     *       filters: list<array{name: string, operator: string, value: mixed}> | null,
-     *       sort: list<array{name: string, direction: string}> | null,
-     *       group: list<array{name: string, direction: string}> | null,
-     *       search: string,
-     *       activeTab: string
-     *   }
-     */
-    public function extractQueryConstraints(HasTable $livewire): array
-    {
-        // TODO: DO
-
-        return [];
     }
 
     public function getAfterTableViewCreatedNotification(): Notification
