@@ -4,6 +4,7 @@ namespace Dvarilek\FilamentTableViews\Tests;
 
 use Dvarilek\FilamentTableViews\FilamentTableViewsServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
+use Filament\FilamentServiceProvider;
 use Filament\Forms\FormsServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
@@ -24,7 +25,9 @@ abstract class TestCase extends OrchestraTestCase
         parent::setUp();
 
         $this->loadLaravelMigrations();
-        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+
+        (require __DIR__ . '/../database/migrations/create_user_table_views_table.php')->up();
     }
 
     /**
@@ -33,8 +36,9 @@ abstract class TestCase extends OrchestraTestCase
     protected function getPackageProviders($app): array
     {
         return [
-            FilamentTableViewsServiceProvider::class,
             LivewireServiceProvider::class,
+            FilamentTableViewsServiceProvider::class,
+            FilamentServiceProvider::class,
             SupportServiceProvider::class,
             FormsServiceProvider::class,
             TablesServiceProvider::class,

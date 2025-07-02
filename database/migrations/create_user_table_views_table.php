@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateCustomTableViewsTable extends Migration
+return new class extends Migration
 {
     public function up(): void
     {
@@ -14,12 +14,12 @@ class CreateCustomTableViewsTable extends Migration
             $table->id();
 
             $table->string('name', 64);
-            $table->text('description')->nullable();
-            $table->string('icon', 255)->nullable();
+            $table->text('description')->nullable()->default(null);
+            $table->string('icon', 255)->nullable()->default(null);
 
             config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)
-                ? $table->json('color')
-                : $table->string('color', 255);
+                ? $table->json('color')->nullable()->default(null)
+                : $table->string('color', 255)->nullable()->default(null);
 
             $table->boolean('is_public')->default(false);
             $table->boolean('is_favorite')->default(false);
@@ -38,4 +38,4 @@ class CreateCustomTableViewsTable extends Migration
     {
         Schema::dropIfExists(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'));
     }
-}
+};

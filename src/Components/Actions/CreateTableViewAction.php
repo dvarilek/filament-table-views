@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Actions;
 
 use Closure;
-use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Filament\Notifications\Notification;
@@ -64,7 +63,7 @@ class CreateTableViewAction extends TableViewAction
                 throw new \Exception('User class '.$user::class.' must implement '.HasTableViewOwnership::class);
             }
 
-            /* @var TableView $tableView */
+            /* @var \DvarilekFilamentTableViewsComponentsTableTableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
                 'model_type' => $viewModelType,

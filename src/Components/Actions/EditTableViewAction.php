@@ -74,7 +74,7 @@ class EditTableViewAction extends TableViewAction
 
             unset($data['should_update_view']);
 
-            /* @var TableView $tableView */
+            /* @var \DvarilekFilamentTableViewsComponentsTableTableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
                 'model_type' => $viewModelType,

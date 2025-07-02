@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\DTO;
 
@@ -9,11 +9,11 @@ use Illuminate\Contracts\Database\Eloquent\Castable;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
-use JsonSerializable;
+use InvalidArgumentException;
 
 // TODO: Add toggled / visible / hidden columns, maybe even recordsPerPage
 
-final readonly class TableViewState implements Arrayable, JsonSerializable, Castable
+final readonly class TableViewState implements Arrayable, Castable
 {
     public function __construct(
         public ?array $tableFilters = null,
@@ -51,11 +51,6 @@ final readonly class TableViewState implements Arrayable, JsonSerializable, Cast
         ];
     }
 
-    public function jsonSerialize(): string
-    {
-        return json_encode($this->toArray(), JSON_THROW_ON_ERROR);
-    }
-
     public static function castUsing(array $arguments): CastsAttributes
     {
         return new class implements CastsAttributes
@@ -79,17 +74,19 @@ final readonly class TableViewState implements Arrayable, JsonSerializable, Cast
                 );
             }
 
-            public function set(Model $model, string $key, mixed $value, array $attributes): ?string
+            public function set(Model $model, string $key, mixed $value, array $attributes): ?array
             {
                 if ($value === null) {
-                    return '{}';
+                    return [$key => '{}'];
                 }
 
-                if (!$value instanceof TableViewState) {
-                    throw new \InvalidArgumentException('Value must be an instance of TableViewQueryConstraintsBag');
+                if (! $value instanceof TableViewState) {
+                    throw new InvalidArgumentException('Value must be an instance of TableViewQueryConstraintsBag');
                 }
 
-                return json_encode($value, JSON_THROW_ON_ERROR);
+                return [
+                    $key => json_encode($value->toArray(), JSON_THROW_ON_ERROR),
+                ];
             }
         };
     }
