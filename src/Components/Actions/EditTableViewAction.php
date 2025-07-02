@@ -47,9 +47,9 @@ class EditTableViewAction extends TableViewAction
         $this->form(static fn (EditTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (EditTableViewAction $action, HasTable $livewire, array $data): void {
-            $viewTypeModel = $action->getViewTypeModel();
+            $viewModelType = $action->getModel();
 
-            if (! $viewTypeModel) {
+            if (! $viewModelType) {
                 throw new \Exception('The EditViewAction must have a viewTypeModel set.');
             }
 
@@ -73,7 +73,7 @@ class EditTableViewAction extends TableViewAction
             /* @var TableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
-                'model_type' => $viewTypeModel,
+                'model_type' => $viewModelType,
             ]);
 
             $notification = $this->getAfterTableViewUpdatedNotification();

@@ -9,6 +9,8 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 
@@ -90,13 +92,13 @@ trait HasTableViews
     public function createTableViewAction(): Action
     {
         return CreateTableViewAction::make()
-            ->viewTypeModel($this->getViewTypeModel());
+            ->model($this->getViewModelType());
     }
 
     /**
      * @return class-string<\Illuminate\Database\Eloquent\Model>
      */
-    protected function getViewTypeModel(): string
+    protected static function getViewModelType(): string
     {
         return static::getResource()::getModel();
     }

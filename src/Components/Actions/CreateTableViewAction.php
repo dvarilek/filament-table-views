@@ -46,9 +46,9 @@ class CreateTableViewAction extends TableViewAction
         $this->form(static fn (CreateTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (CreateTableViewAction $action, HasTable $livewire, array $data): void {
-            $viewTypeModel = $action->getViewTypeModel();
+            $viewModelType = $action->getModel();
 
-            if (! $viewTypeModel) {
+            if (! $viewModelType) {
                 throw new \Exception('The CreateViewAction must have a viewTypeModel set.');
             }
 
@@ -66,7 +66,7 @@ class CreateTableViewAction extends TableViewAction
             /* @var TableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
-                'model_type' => $viewTypeModel,
+                'model_type' => $viewModelType,
                 'query_constraints' => $action->extractQueryConstraints($livewire),
             ]);
 

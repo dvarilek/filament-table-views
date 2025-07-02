@@ -7,6 +7,7 @@ namespace Dvarilek\FilamentTableViews\Components\Actions;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Textarea;
@@ -15,11 +16,6 @@ use Filament\Forms\Components\Toggle;
 
 class TableViewAction extends Action
 {
-    /**
-     * @return class-string<\Illuminate\Database\Eloquent\Model> | null
-     */
-    protected ?string $viewTypeModel = null;
-
     protected ?Closure $modifyNameFormComponentUsing = null;
 
     protected ?Closure $modifyIconFormComponentUsing = null;
@@ -35,20 +31,9 @@ class TableViewAction extends Action
     protected ?Closure $modifyDescriptionFormComponentUsing = null;
 
     /**
-     * @var array<string, \Filament\Forms\Components\Field>
+     * @var array<string, \Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
      */
     protected array $extraFormComponents = [];
-
-    /**
-     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $modelFQCN
-     * @return $this
-     */
-    public function viewTypeModel(string $modelFQCN): static
-    {
-        $this->viewTypeModel = $modelFQCN;
-
-        return $this;
-    }
 
     public function nameFormComponent(Closure $callback): static
     {
@@ -104,14 +89,6 @@ class TableViewAction extends Action
         $this->extraFormComponents[$beforeComponent] = $component;
 
         return $this;
-    }
-
-    /**
-     * @return class-string<\Illuminate\Database\Eloquent\Model>
-     */
-    public function getViewTypeModel(): string
-    {
-        return $this->viewTypeModel;
     }
 
     /**
@@ -283,7 +260,7 @@ class TableViewAction extends Action
         return $component;
     }
 
-    protected function getExtraFormComponentBefore(string $componentName): ?Field
+    protected function getExtraFormComponentBefore(string $componentName): null | Field | Component
     {
         return $this->extraFormComponents[$componentName] ?? null;
     }
