@@ -44,7 +44,7 @@ class EditTableViewAction extends TableViewAction
 
         $this->modalWidth(MaxWidth::Medium);
 
-        $this->form(static::getTableViewActionForm(...));
+        $this->form(static fn (EditTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (EditTableViewAction $action, HasTable $livewire, array $data): void {
             $viewTypeModel = $action->getViewTypeModel();
@@ -113,5 +113,4 @@ class EditTableViewAction extends TableViewAction
 
         return $components;
     }
-
 }

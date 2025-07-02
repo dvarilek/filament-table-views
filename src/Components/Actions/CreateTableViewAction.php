@@ -43,7 +43,7 @@ class CreateTableViewAction extends TableViewAction
 
         $this->modalWidth(MaxWidth::Medium);
 
-        $this->form(static::getTableViewActionForm(...));
+        $this->form(static fn (CreateTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (CreateTableViewAction $action, HasTable $livewire, array $data): void {
             $viewTypeModel = $action->getViewTypeModel();

@@ -55,11 +55,11 @@ return [
             'submit_label' => 'Update view',
 
             'form' => [
-                
-                'should_update_view' => 'Update view filters'
-                
+
+                'should_update_view' => 'Update view filters',
+
             ],
-            
+
             'notifications' => [
 
                 'after_table_view_updated' => [

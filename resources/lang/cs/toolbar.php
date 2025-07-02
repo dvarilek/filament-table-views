@@ -56,7 +56,7 @@ return [
 
             'form' => [
 
-                'should_update_view' => 'Upravit filtry pohledu tabulky'
+                'should_update_view' => 'Upravit filtry pohledu tabulky',
 
             ],
 
