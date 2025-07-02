@@ -11,7 +11,7 @@ use Stancl\VirtualColumn\VirtualColumn;
 /**
  * @property string $name
  * @property string|null $description
- * @property string $icon
+ * @property string|null $icon
  * @property mixed $color
  * @property bool $is_public
  * @property bool $is_favorite
@@ -23,9 +23,11 @@ use Stancl\VirtualColumn\VirtualColumn;
  * @property \Illuminate\Support\Carbon | null $created_at
  * @property \Illuminate\Support\Carbon | null $updated_at
  * @property array{
- *      filters: list<array{name: string, value: mixed}> | null,
+ *      filters: list<array{name: string, operator: string, value: mixed}> | null,
  *      sort: list<array{name: string, direction: string}> | null,
- *      group: list<array{name: string}> | null
+ *      group: list<array{name: string, direction: string}> | null,
+ *      search: string,
+ *      activeTab: string
  *  } $query_constrains
  */
 class CustomTableView extends Model

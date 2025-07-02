@@ -13,9 +13,9 @@ class CreateCustomTableViewsTable extends Migration
         Schema::create(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'), function (Blueprint $table) {
             $table->id();
 
-            $table->string('name', 255);
+            $table->string('name', 64);
             $table->text('description')->nullable();
-            $table->string('icon', 255);
+            $table->string('icon', 255)->nullable();
 
             config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)
                 ? $table->json('color')

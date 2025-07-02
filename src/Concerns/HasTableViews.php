@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Concerns;
 
+use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
+use Filament\Actions\Action;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 
@@ -17,8 +19,6 @@ trait HasTableViews
 {
     #[Url(as: 'tableView')]
     public ?string $activeTableViewKey = null;
-
-    public function bootedInteractsWithTableViews(): void {}
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
@@ -87,6 +87,20 @@ trait HasTableViews
             ->toArray();
     }
 
+    public function createTableViewAction(): Action
+    {
+        return CreateTableViewAction::make()
+            ->viewTypeModel($this->getViewTypeModel());
+    }
+
+    /**
+     * @return class-string<\Illuminate\Database\Eloquent\Model>
+     */
+    protected function getViewTypeModel(): string
+    {
+        return static::getResource()::getModel();
+    }
+
     public function resetTableQueryConstraints(): void
     {
         $this->tableFilters = [];
@@ -95,5 +109,6 @@ trait HasTableViews
         $this->tableSortColumn = null;
         $this->tableGrouping = null;
         $this->tableGroupingDirection = null;
+        $this->activeTab = null;
     }
 }
