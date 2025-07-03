@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Tests\Models\Order;
 use Dvarilek\FilamentTableViews\Tests\Models\User;
@@ -75,5 +76,31 @@ it('casts stored JSON back to DTO', function () {
         ->tableGroupingDirection->toBe($originalState->tableGroupingDirection)
         ->tableSearch->toBe($originalState->tableSearch)
         ->activeTab->toBe($originalState->activeTab);
+});
+
+it('table view model can be converted into table view', function () {
+    /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
+    $user = auth()->user();
+
+    /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $model */
+    $model = $user->tableViews()->create([
+        'name' => 'Test View',
+        'icon' => 'heroicon-o-user',
+        'color' => 'primary',
+        'is_public' => false,
+        'is_favorite' => true,
+        'is_globally_highlighted' => true,
+        'model_type' => Order::class,
+        'view_state' => new TableViewState(),
+    ]);
+
+    expect($model->toTableView())
+        ->toBeInstanceOf(TableView::class)
+        ->getLabel()->toBe($model->name)
+        ->getIcon()->toBe($model->icon)
+        ->getColor()->toBe($model->color)
+        ->isPublic()->toBe($model->is_public)
+        ->isFavorite()->toBe($model->is_favorite)
+        ->isGloballyHighlighted()->toBe($model->is_globally_highlighted);
 });
 

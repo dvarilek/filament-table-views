@@ -87,6 +87,9 @@ class CustomTableView extends Model implements ToTableView
     {
         return TableView::make($this->name)
             ->icon($this->icon)
-            ->color($this->color);
+            ->color($this->color)
+            ->public($this->is_public)
+            ->favorite($this->is_favorite)
+            ->globallyHighlighted($this->is_globally_highlighted);
     }
 }
