@@ -87,6 +87,8 @@ it('table view model can be converted into table view', function () {
     /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
     $user = auth()->user();
 
+    $viewState = new TableViewState();
+
     /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $model */
     $model = $user->tableViews()->create([
         'name' => 'Test View',
@@ -96,16 +98,35 @@ it('table view model can be converted into table view', function () {
         'is_favorite' => true,
         'is_globally_highlighted' => true,
         'model_type' => Order::class,
-        'view_state' => new TableViewState(),
+        'view_state' => $viewState,
     ]);
 
-    expect($model->toTableView())
+    $tableView = $model->toTableView();
+
+    expect($tableView)
         ->toBeInstanceOf(TableView::class)
         ->getLabel()->toBe($model->name)
         ->getIcon()->toBe($model->icon)
         ->getColor()->toBe($model->color)
         ->isPublic()->toBe($model->is_public)
         ->isFavorite()->toBe($model->is_favorite)
-        ->isGloballyHighlighted()->toBe($model->is_globally_highlighted);
+        ->isGloballyHighlighted()->toBe($model->is_globally_highlighted)
+        ->tableFilters($viewState->tableFilters)
+        ->tableSort($viewState->tableSortColumn, $viewState->tableSortDirection)
+        ->tableGrouping($viewState->tableGrouping, $viewState->tableGroupingDirection)
+        ->tableSearch($viewState->tableSearch)
+        ->toggledTableColumns($viewState->toggledTableColumns)
+        ->activeTab($viewState->activeTab)
+        ->hasModifyQueryUsing()->toBeFalse()
+        ->and($tableView->getTableViewState())
+        ->toBeInstanceOf(TableViewState::class)
+        ->tableFilters->toBe($viewState->tableFilters)
+        ->tableSortColumn->toBe($viewState->tableSortColumn)
+        ->tableSortDirection->toBe($viewState->tableSortDirection)
+        ->tableGrouping->toBe($viewState->tableGrouping)
+        ->tableGroupingDirection->toBe($viewState->tableGroupingDirection)
+        ->tableSearch->toBe($viewState->tableSearch)
+        ->toggledTableColumns->toBe($viewState->toggledTableColumns)
+        ->activeTab->toBe($viewState->activeTab);
 });
 

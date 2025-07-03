@@ -22,8 +22,8 @@ use Dvarilek\FilamentTableViews\DTO\TableViewState;
  * @property class-string<\Illuminate\Contracts\Auth\Authenticatable & \Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership> $owner_type
  * @property class-string<\Illuminate\Database\Eloquent\Model> $model_type
  * @property \Illuminate\Database\Eloquent\Model $owner
- * @property \Illuminate\Support\Carbon | null $created_at
- * @property \Illuminate\Support\Carbon | null $updated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Dvarilek\FilamentTableViews\DTO\TableViewState $view_state
  */
 class CustomTableView extends Model implements ToTableView
@@ -85,11 +85,19 @@ class CustomTableView extends Model implements ToTableView
 
     public function toTableView(): TableView
     {
+        $tableViewState = $this->view_state;
+
         return TableView::make($this->name)
             ->icon($this->icon)
             ->color($this->color)
             ->public($this->is_public)
             ->favorite($this->is_favorite)
-            ->globallyHighlighted($this->is_globally_highlighted);
+            ->globallyHighlighted($this->is_globally_highlighted)
+            ->tableFilters($tableViewState->tableFilters)
+            ->tableSort($tableViewState->tableSortColumn, $tableViewState->tableSortDirection)
+            ->tableGrouping($tableViewState->tableGrouping, $tableViewState->tableGroupingDirection)
+            ->tableSearch($tableViewState->tableSearch)
+            ->toggledTableColumns($tableViewState->toggledTableColumns)
+            ->activeTab($tableViewState->activeTab);
     }
 }

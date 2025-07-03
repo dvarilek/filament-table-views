@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Table;
 
 use Closure;
+use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Filament\Support\Components\Component;
 use Filament\Support\Concerns\HasExtraAttributes;
 use Filament\Support\Concerns\HasIcon;
@@ -24,13 +25,29 @@ class TableView extends Component
      */
     protected string | array | Closure | null $color = null;
 
+    protected ?Closure $modifyQueryUsing = null;
+
     protected bool | Closure $isPublic = true;
 
     protected bool | Closure $isFavorite = false;
 
     protected bool | Closure $isGloballyHighlighted = false;
 
-    protected ?Closure $modifyQueryUsing = null;
+    protected array | Closure | null $tableFilters = null;
+
+    protected string | Closure | null $tableSortColumn = null;
+
+    protected string | Closure | null $tableSortDirection = null;
+
+    protected string | Closure | null $tableGrouping = null;
+
+    protected string | Closure | null $tableGroupingDirection = null;
+
+    protected string | Closure | null $tableSearch = null;
+
+    protected array | Closure $toggledTableColumns = [];
+
+    protected string | Closure | null $activeTab = null;
 
     public function __construct(string | Closure | null $label = null)
     {
@@ -69,6 +86,13 @@ class TableView extends Component
         return $this;
     }
 
+    public function modifyQueryUsing(?Closure $callback): static
+    {
+        $this->modifyQueryUsing = $callback;
+
+        return $this;
+    }
+
     public function public(bool | Closure $condition = true): static
     {
         $this->isPublic = $condition;
@@ -90,9 +114,46 @@ class TableView extends Component
         return $this;
     }
 
-    public function modifyQueryUsing(?Closure $callback): static
+    public function tableFilters(array | Closure | null $tableFilters = null): static
     {
-        $this->modifyQueryUsing = $callback;
+        $this->tableFilters = $tableFilters;
+
+        return $this;
+    }
+
+    public function tableSort(string | Closure | null $tableSortColumn = null, string | Closure | null $tableSortDirection = null): static
+    {
+        $this->tableSortColumn = $tableSortColumn;
+        $this->tableSortDirection = $tableSortDirection;
+
+        return $this;
+    }
+
+    public function tableGrouping(string | Closure | null $tableGrouping = null, string | Closure | null $tableGroupingDirection = null): static
+    {
+        $this->tableGrouping = $tableGrouping;
+        $this->tableGroupingDirection = $tableGroupingDirection;
+
+        return $this;
+    }
+
+    public function tableSearch(string | Closure | null $tableSearch = null): static
+    {
+        $this->tableSearch = $tableSearch;
+
+        return $this;
+    }
+
+    public function toggledTableColumns(array | Closure $toggledTableColumns = []): static
+    {
+        $this->toggledTableColumns = $toggledTableColumns;
+
+        return $this;
+    }
+
+    public function activeTab(string | Closure | null $activeTab = null): static
+    {
+        $this->activeTab = $activeTab;
 
         return $this;
     }
@@ -115,6 +176,18 @@ class TableView extends Component
         return $this->evaluate($this->color) ?? 'primary';
     }
 
+    public function modifyQuery(Builder $query): Builder
+    {
+        return $this->evaluate($this->modifyQueryUsing, [
+            'query' => $query,
+        ]) ?? $query;
+    }
+
+    public function hasModifyQueryUsing(): bool
+    {
+        return $this->modifyQueryUsing instanceof Closure;
+    }
+
     public function isPublic(): bool
     {
         return (bool) $this->evaluate($this->isPublic);
@@ -122,8 +195,6 @@ class TableView extends Component
 
     public function isFavorite(): bool
     {
-
-
         return (bool) $this->evaluate($this->isFavorite);
     }
 
@@ -132,10 +203,17 @@ class TableView extends Component
         return (bool) $this->evaluate($this->isGloballyHighlighted);
     }
 
-    public function modifyQuery(Builder $query): Builder
+    public function getTableViewState(): TableViewState
     {
-        return $this->evaluate($this->modifyQueryUsing, [
-            'query' => $query,
-        ]) ?? $query;
+        return new TableViewState(
+            tableFilters: $this->evaluate($this->tableFilters),
+            tableSortColumn: $this->evaluate($this->tableSortColumn),
+            tableSortDirection: $this->evaluate($this->tableSortDirection),
+            tableGrouping: $this->evaluate($this->tableGrouping),
+            tableGroupingDirection: $this->evaluate($this->tableGroupingDirection),
+            tableSearch: $this->evaluate($this->tableSearch),
+            toggledTableColumns: $this->evaluate($this->toggledTableColumns),
+            activeTab: $this->evaluate($this->activeTab),
+        );
     }
 }

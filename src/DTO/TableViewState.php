@@ -11,8 +11,6 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
-// TODO: Add toggled / visible / hidden columns, maybe even recordsPerPage
-
 final readonly class TableViewState implements Arrayable, Castable
 {
     public function __construct(
