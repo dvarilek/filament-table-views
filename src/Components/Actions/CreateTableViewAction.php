@@ -63,7 +63,7 @@ class CreateTableViewAction extends TableViewAction
                 throw new \Exception('User class '.$user::class.' must implement '.HasTableViewOwnership::class);
             }
 
-            /* @var \DvarilekFilamentTableViewsComponentsTableTableView $tableView */
+            /* @var \Dvarilek\FilamentTableViews\Components\Table\TableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
                 'model_type' => $viewModelType,
@@ -81,7 +81,7 @@ class CreateTableViewAction extends TableViewAction
     }
 
     /**
-     * @param  Closure(\Filament\Notifications\Notification $notification, \Dvarilek\FilamentTableViews\Components\Table\TableView $tableView): \Filament\Notifications\Notification  $callback
+     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification  $callback
      * @return $this
      */
     public function afterTableViewCreatedNotification(Closure $callback): static
