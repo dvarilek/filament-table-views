@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Actions;
 
 use Closure;
-use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
+use Exception;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -54,18 +54,18 @@ class EditTableViewAction extends TableViewAction
             $viewModelType = $action->getModel();
 
             if (! $viewModelType) {
-                throw new \Exception('The EditViewAction must have a viewTypeModel set.');
+                throw new Exception('The EditViewAction must have a viewTypeModel set.');
             }
 
             /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
             $user = auth()->user();
 
             if (! $user) {
-                throw new \Exception('Cannot edit TableView, user not found.');
+                throw new Exception('Cannot edit TableView, user not found.');
             }
 
             if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
-                throw new \Exception('User class '.$user::class.' must implement '.HasTableViewOwnership::class);
+                throw new Exception('User class ' . $user::class . ' must implement ' . HasTableViewOwnership::class);
             }
 
             if ($data['should_update_view'] ?? null) {
@@ -131,8 +131,8 @@ class EditTableViewAction extends TableViewAction
         $component = Toggle::make('should_update_view')
             ->label(__('filament-table-views::toolbar.actions.edit-table-view.form.should_update_view'));
 
-        if ($this->modifyNameFormComponentUsing) {
-            $component = $this->evaluate($this->modifyNameFormComponentUsing, [
+        if ($this->modifyShouldUpdateViewFormComponentUsing) {
+            $component = $this->evaluate($this->modifyShouldUpdateViewFormComponentUsing, [
                 'field' => $component,
                 'component' => $component,
             ], [

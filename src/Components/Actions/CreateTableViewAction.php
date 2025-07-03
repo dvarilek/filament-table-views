@@ -7,6 +7,7 @@ namespace Dvarilek\FilamentTableViews\Components\Actions;
 use Closure;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
+use Exception;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
@@ -49,18 +50,18 @@ class CreateTableViewAction extends TableViewAction
             $viewModelType = $action->getModel();
 
             if (! $viewModelType) {
-                throw new \Exception('The CreateViewAction must have a viewTypeModel set.');
+                throw new Exception('The CreateViewAction must have a viewTypeModel set.');
             }
 
             /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
             $user = auth()->user();
 
             if (! $user) {
-                throw new \Exception('Cannot create TableView, user not found.');
+                throw new Exception('Cannot create TableView, user not found.');
             }
 
             if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
-                throw new \Exception('User class '.$user::class.' must implement '.HasTableViewOwnership::class);
+                throw new Exception('User class ' . $user::class . ' must implement ' . HasTableViewOwnership::class);
             }
 
             /* @var \Dvarilek\FilamentTableViews\Components\Table\TableView $tableView */
