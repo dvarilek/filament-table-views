@@ -22,6 +22,7 @@ final readonly class TableViewState implements Arrayable, Castable
         public ?string $tableGrouping = null,
         public ?string $tableGroupingDirection = null,
         public ?string $tableSearch = null,
+        public array $toggledTableColumns = [],
         public ?string $activeTab = null,
     ) {}
 
@@ -34,6 +35,7 @@ final readonly class TableViewState implements Arrayable, Castable
             tableGrouping: $livewire->getTableGrouping()?->getId(),
             tableGroupingDirection: $livewire->getTableGroupingDirection(),
             tableSearch: $livewire->getTableSearch(),
+            toggledTableColumns: $livewire->toggledTableColumns,
             activeTab: property_exists($livewire, 'activeTab') ? $livewire->activeTab : null,
         );
     }
@@ -47,6 +49,7 @@ final readonly class TableViewState implements Arrayable, Castable
             'tableGrouping' => $this->tableGrouping,
             'tableGroupingDirection' => $this->tableGroupingDirection,
             'tableSearch' => $this->tableSearch,
+            'toggledTableColumns' => $this->toggledTableColumns,
             'activeTab' => $this->activeTab,
         ];
     }
@@ -70,6 +73,7 @@ final readonly class TableViewState implements Arrayable, Castable
                     tableGrouping: $data['tableGrouping'] ?? null,
                     tableGroupingDirection: $data['tableGroupingDirection'] ?? null,
                     tableSearch: $data['search'] ?? null,
+                    toggledTableColumns: $data['toggledTableColumns'] ?? [],
                     activeTab: $data['activeTab'] ?? null,
                 );
             }

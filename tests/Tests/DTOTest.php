@@ -26,17 +26,23 @@ it('can create a DTO from livewire', function () {
         ->tableGrouping->toBe('created_at')
         ->tableGroupingDirection->toBe('desc')
         ->tableSearch->toBe('fw')
+        ->toggledTableColumns->toBe([
+            'currency' => true,
+            'total' => false,
+        ])
         ->activeTab->toBe('processing');
 });
 
 it('can create a DTO from livewire with null values', function (string $property) {
     /* @var \Filament\Tables\Contracts\HasTable $livewire */
     $livewire = livewire(TestLivewire::class)->instance();
-    $livewire->$property = null;
+    $livewire->$property = $property === 'toggledTableColumns' ? [] : null;
 
     $state = TableViewState::fromLivewire($livewire);
 
-    expect($state)->$property->toBeNull();
+    $property === 'toggledTableColumns'
+        ? expect($state)->$property->toBeArray()
+        : expect($state)->$property->toBeNull();
 })->with([
     'tableFilters',
     'tableSortColumn',
@@ -44,6 +50,7 @@ it('can create a DTO from livewire with null values', function (string $property
     'tableGrouping',
     'tableGroupingDirection',
     'tableSearch',
+    'toggledTableColumns',
     'activeTab',
 ]);
 
@@ -71,6 +78,10 @@ it('can survive JSON encoding and decoding', function () {
         'tableGrouping' => 'created_at',
         'tableGroupingDirection' => 'desc',
         'tableSearch' => 'fw',
+        'toggledTableColumns' => [
+            'currency' => true,
+            'total' => false,
+        ],
         'activeTab' => 'processing',
     ]);
 });

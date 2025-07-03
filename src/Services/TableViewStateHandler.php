@@ -28,6 +28,9 @@ class TableViewStateHandler
         $livewire->tableSearch = $viewState->tableSearch;
         $livewire->updatedTableSearch();
 
+        $livewire->toggledTableColumns = $viewState->toggledTableColumns;
+        $livewire->updatedToggledTableColumns();
+
         if (property_exists($livewire, 'activeTab')) {
             $livewire->activeTab = $viewState->activeTab;
         }

@@ -47,6 +47,10 @@ it('stores DTO as JSON in the database', function () {
         'tableGrouping' => 'created_at',
         'tableGroupingDirection' => 'desc',
         'tableSearch' => 'fw',
+        'toggledTableColumns' => [
+            'currency' => true,
+            'total' => false,
+        ],
         'activeTab' => 'processing',
     ]);
 });
@@ -75,6 +79,7 @@ it('casts stored JSON back to DTO', function () {
         ->tableGrouping->toBe($originalState->tableGrouping)
         ->tableGroupingDirection->toBe($originalState->tableGroupingDirection)
         ->tableSearch->toBe($originalState->tableSearch)
+        ->toggledTableColumns->toBe($originalState->toggledTableColumns)
         ->activeTab->toBe($originalState->activeTab);
 });
 
