@@ -10,6 +10,7 @@ use Filament\Support\Components\Component;
 use Filament\Support\Concerns\HasExtraAttributes;
 use Filament\Support\Concerns\HasIcon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 
 class TableView extends Component
 {
@@ -33,6 +34,9 @@ class TableView extends Component
 
     protected bool | Closure $isGloballyHighlighted = false;
 
+    /**
+     * @var array<string, mixed> | Closure | null
+     */
     protected array | Closure | null $tableFilters = null;
 
     protected string | Closure | null $tableSortColumn = null;
@@ -45,7 +49,20 @@ class TableView extends Component
 
     protected string | Closure | null $tableSearch = null;
 
+    /**
+     * @var array<string, mixed> | Closure
+     */
     protected array | Closure $toggledTableColumns = [];
+
+    /**
+     * @var list<string> | Closure
+     */
+    protected array | Closure $hiddenTableColumns = [];
+
+    /**
+     * @var list<string> | Closure
+     */
+    protected array | Closure $visibleTableColumns = [];
 
     protected string | Closure | null $activeTab = null;
 
@@ -114,6 +131,10 @@ class TableView extends Component
         return $this;
     }
 
+    /**
+     * @param array<string, mixed> | Closure | null $tableFilters
+     * @return $this
+     */
     public function tableFilters(array | Closure | null $tableFilters = null): static
     {
         $this->tableFilters = $tableFilters;
@@ -144,9 +165,35 @@ class TableView extends Component
         return $this;
     }
 
+    /**
+     * @param  array<string, mixed> | Closure $toggledTableColumns
+     * @return $this
+     */
     public function toggledTableColumns(array | Closure $toggledTableColumns = []): static
     {
         $this->toggledTableColumns = $toggledTableColumns;
+
+        return $this;
+    }
+
+    /**
+     * @param  list<string> | Closure $visibleTableColumns
+     * @return $this
+     */
+    public function visibleTableColumns(array | Closure $visibleTableColumns = []): static
+    {
+        $this->visibleTableColumns = $visibleTableColumns;
+
+        return $this;
+    }
+
+    /**
+     * @param  list<string> | Closure $hiddenTableColumns
+     * @return $this
+     */
+    public function hiddenTableColumns(array | Closure $hiddenTableColumns = []): static
+    {
+        $this->hiddenTableColumns = $hiddenTableColumns;
 
         return $this;
     }
@@ -212,8 +259,28 @@ class TableView extends Component
             tableGrouping: $this->evaluate($this->tableGrouping),
             tableGroupingDirection: $this->evaluate($this->tableGroupingDirection),
             tableSearch: $this->evaluate($this->tableSearch),
-            toggledTableColumns: $this->evaluate($this->toggledTableColumns),
+            toggledTableColumns: $this->getToggledTableColumns(),
             activeTab: $this->evaluate($this->activeTab),
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getToggledTableColumns(): array
+    {
+        $columns = Arr::undot($this->evaluate($this->toggledTableColumns) ?? []);
+        $visibleColumns = $this->evaluate($this->visibleTableColumns) ?? [];
+        $hiddenColumns = $this->evaluate($this->hiddenTableColumns) ?? [];
+
+        foreach ($visibleColumns as $visibleColumn) {
+            Arr::set($columns, $visibleColumn, true);
+        }
+
+        foreach ($hiddenColumns as $hiddenColumn) {
+            Arr::set($columns, $hiddenColumn, false);
+        }
+
+        return $columns;
     }
 }
