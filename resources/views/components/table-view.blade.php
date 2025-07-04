@@ -37,7 +37,7 @@
                 'x-tooltip' => filled($tooltip)
                     ? '{
                         content: ' . \Illuminate\Support\Js::from($tooltip) . ',
-                        theme: \$store.theme
+                        theme: $store.theme
                     }'
                     : null,
                 'tabindex' => '-1'
