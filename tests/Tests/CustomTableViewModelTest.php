@@ -47,6 +47,10 @@ it('stores DTO as JSON in the database', function () {
         'tableGrouping' => 'created_at',
         'tableGroupingDirection' => 'desc',
         'tableSearch' => 'fw',
+        'tableColumnSearches' => [
+            'currency' => 'dollar',
+            'total' => '7',
+        ],
         'toggledTableColumns' => [
             'currency' => true,
             'total' => false,
@@ -79,6 +83,7 @@ it('casts stored JSON back to DTO', function () {
         ->tableGrouping->toBe($originalState->tableGrouping)
         ->tableGroupingDirection->toBe($originalState->tableGroupingDirection)
         ->tableSearch->toBe($originalState->tableSearch)
+        ->tableColumnSearches->toBe($originalState->tableColumnSearches)
         ->toggledTableColumns->toBe($originalState->toggledTableColumns)
         ->activeTab->toBe($originalState->activeTab);
 });
@@ -115,6 +120,7 @@ it('table view model can be converted into table view', function () {
         ->tableSort($viewState->tableSortColumn, $viewState->tableSortDirection)
         ->tableGrouping($viewState->tableGrouping, $viewState->tableGroupingDirection)
         ->tableSearch($viewState->tableSearch)
+        ->tableColumnSearches($viewState->tableColumnSearches)
         ->toggledTableColumns($viewState->toggledTableColumns)
         ->activeTab($viewState->activeTab)
         ->hasModifyQueryUsing()->toBeFalse()
@@ -126,6 +132,7 @@ it('table view model can be converted into table view', function () {
         ->tableGrouping->toBe($viewState->tableGrouping)
         ->tableGroupingDirection->toBe($viewState->tableGroupingDirection)
         ->tableSearch->toBe($viewState->tableSearch)
+        ->tableColumnSearches->toBe($viewState->tableColumnSearches)
         ->toggledTableColumns->toBe($viewState->toggledTableColumns)
         ->activeTab->toBe($viewState->activeTab);
 });

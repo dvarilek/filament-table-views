@@ -97,6 +97,7 @@ class CustomTableView extends Model implements ToTableView
             ->tableSort($tableViewState->tableSortColumn, $tableViewState->tableSortDirection)
             ->tableGrouping($tableViewState->tableGrouping, $tableViewState->tableGroupingDirection)
             ->tableSearch($tableViewState->tableSearch)
+            ->tableColumnSearches($tableViewState->tableColumnSearches)
             ->toggledTableColumns($tableViewState->toggledTableColumns)
             ->activeTab($tableViewState->activeTab);
     }

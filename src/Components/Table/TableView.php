@@ -52,6 +52,11 @@ class TableView extends Component
     /**
      * @var array<string, mixed> | Closure
      */
+    protected array | Closure $tableColumnSearches = [];
+
+    /**
+     * @var array<string, mixed> | Closure
+     */
     protected array | Closure $toggledTableColumns = [];
 
     /**
@@ -166,6 +171,17 @@ class TableView extends Component
     }
 
     /**
+     * @param  array<string, mixed> | Closure $tableColumnSearches
+     * @return $this
+     */
+    public function tableColumnSearches(array | Closure $tableColumnSearches = []): static
+    {
+        $this->tableColumnSearches = $tableColumnSearches;
+
+        return $this;
+    }
+
+    /**
      * @param  array<string, mixed> | Closure $toggledTableColumns
      * @return $this
      */
@@ -259,6 +275,7 @@ class TableView extends Component
             tableGrouping: $this->evaluate($this->tableGrouping),
             tableGroupingDirection: $this->evaluate($this->tableGroupingDirection),
             tableSearch: $this->evaluate($this->tableSearch),
+            tableColumnSearches: Arr::undot($this->evaluate($this->tableColumnSearches) ?? []),
             toggledTableColumns: $this->getToggledTableColumns(),
             activeTab: $this->evaluate($this->activeTab),
         );

@@ -127,6 +127,14 @@ trait HasTableViews
             $this->updatedTableSearch();
         }
 
+        if (
+            (filled($this->tableColumnSearches) || filled($viewState->tableColumnSearches)) &&
+            ($this->tableColumnSearches !== $viewState->tableColumnSearches)
+        ) {
+            foreach (Arr::dot($viewState->tableColumnSearches) as $column => $value) {
+                Arr::set($this->tableColumnSearches, $column, $value);
+            }
+        }
 
         // TODO: Maybe add for other properties
         if (

@@ -27,15 +27,23 @@ class TestLivewire extends Component implements HasForms, Tables\Contracts\HasTa
             ],
         ];
 
-        $this->tableGrouping = 'created_at';
-        $this->tableGroupingDirection = 'desc';
-        $this->tableSearch = 'fw';
         $this->tableSortColumn = 'currency';
         $this->tableSortDirection = 'asc';
+
+        $this->tableGrouping = 'created_at';
+        $this->tableGroupingDirection = 'desc';
+
+        $this->tableSearch = 'fw';
+        $this->tableColumnSearches = [
+            'currency' => 'dollar',
+            'total' => '7',
+        ];
+
         $this->toggledTableColumns = [
             'currency' => true,
             'total' => false,
         ];
+
         $this->activeTab = 'processing';
     }
 
