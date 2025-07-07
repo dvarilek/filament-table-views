@@ -7,7 +7,6 @@ namespace Dvarilek\FilamentTableViews\Concerns;
 use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
-use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,7 +25,7 @@ trait HasTableViews
     /**
      * @var array<string, mixed>
      */
-    public array $cachedToggledTableColumns = [];
+    public array $originalToggledTableColumns = [];
 
     /**
      * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
@@ -68,19 +67,41 @@ trait HasTableViews
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
-        if ($this->activeTableViewKey === $tableViewKey) {
-            $this->activeTableViewKey = null;
+        $table = $this->getTable();
 
-            $this->resetTableQueryConstraints();
+        $originalShouldPersistTableFiltersInSession = $table->persistsFiltersInSession();
+        $originalShouldPersistTableSortInSession = $table->persistsSortInSession();
+        $originalShouldPersistTableSearchInSession = $table->persistsSearchInSession();
+        $originalShouldPersistTableColumnSearchesInSession = $table->persistsColumnSearchesInSession();
 
-            return;
+        // The session storage here gets explicitly disabled, so that it doesn't get polluted from updates performed
+        // on livewire properties that are updated based on the active table view - only the active table view
+        // should be stored in session, not its parts.
+        $table
+            ->persistFiltersInSession(false)
+            ->persistSortInSession(false)
+            ->persistSearchInSession(false)
+            ->persistColumnSearchesInSession(false);
+
+        try {
+            if ($this->activeTableViewKey === $tableViewKey) {
+                $this->removeActiveTableView();
+
+                return;
+            }
+
+            $this->activeTableViewKey = $tableViewKey;
+
+            $this->loadStateFromTableView($this->getActiveTableView());
+        } finally {
+            $table
+                ->persistFiltersInSession($originalShouldPersistTableFiltersInSession)
+                ->persistSortInSession($originalShouldPersistTableSortInSession)
+                ->persistSearchInSession($originalShouldPersistTableSearchInSession)
+                ->persistColumnSearchesInSession($originalShouldPersistTableColumnSearchesInSession);
         }
 
-        $this->activeTableViewKey = $tableViewKey;
-
-        $this->loadStateFromTableView(
-            $this->getActiveTableView()
-        );
+        $this->updatedActiveTableView();
     }
 
     protected function loadStateFromTableView(TableView $tableView): void
@@ -89,7 +110,6 @@ trait HasTableViews
 
         if (filled($this->tableFilters)) {
             if (blank($viewState->tableFilters)) {
-                // TODO: maybe some tableView configuration would make sense? (shouldRemoveFilters, shouldAddToTableFilters etc...)
                 $this->removeTableFilters();
             } elseif ($this->tableFilters !== $viewState->tableFilters) {
                 $this->tableFilters = $viewState->tableFilters;
@@ -98,30 +118,21 @@ trait HasTableViews
             }
         }
 
-        if (
-            (filled($this->tableSortColumn) || filled($viewState->tableSortColumn)) &&
-            ($this->tableSortColumn !== $viewState->tableSortColumn || $this->tableSortDirection !== $viewState->tableSortDirection)
-        ) {
+        if (filled($this->tableSortColumn) || filled($viewState->tableSortColumn)) {
             $this->tableSortColumn = $viewState->tableSortColumn;
             $this->tableSortDirection = $viewState->tableSortDirection;
 
             $this->updatedTableSortColumn();
         }
 
-        if (
-            (filled($this->tableGrouping) || filled($viewState->tableGrouping)) &&
-            ($this->tableGrouping !== $viewState->tableGrouping || $this->tableGroupingDirection !== $viewState->tableGroupingDirection)
-        ) {
+        if (filled($this->tableGrouping) || filled($viewState->tableGrouping)) {
             $this->tableGrouping = $viewState->tableGrouping;
             $this->tableGroupingDirection = $viewState->tableGroupingDirection;
 
             $this->updatedTableGroupColumn();
         }
 
-        if (
-            (filled($this->tableSearch) || filled($viewState->tableSearch)) &&
-            ($this->tableSearch !== $viewState->tableSearch)
-        ) {
+        if (filled($this->tableSearch) || filled($viewState->tableSearch)) {
             $this->tableSearch = $viewState->tableSearch;
 
             $this->updatedTableSearch();
@@ -134,28 +145,25 @@ trait HasTableViews
             foreach (Arr::dot($viewState->tableColumnSearches) as $column => $value) {
                 Arr::set($this->tableColumnSearches, $column, $value);
             }
-        }
 
-        // TODO: Maybe add for other properties
-        if (
-            filled($this->cachedToggledTableColumns) &&
-            $this->cachedToggledTableColumns !== $this->toggledTableColumns &&
-            $this->cachedToggledTableColumns !== $viewState->toggledTableColumns
-        ) {
-            $this->toggledTableColumns = $this->cachedToggledTableColumns;
-
-            $this->cachedToggledTableColumns = [];
+            $this->updatedTableColumnSearches();
         }
 
         if (
             filled($this->toggledTableColumns) || filled($viewState->toggledTableColumns) &&
             ($this->toggledTableColumns !== $viewState->toggledTableColumns)
         ) {
-            $this->cachedToggledTableColumns = $this->toggledTableColumns;
+            // Columns are always explicitly preserved, so they can be restored when no view is active.
+            // Otherwise, users might reasonably perceive this altered state as a bug.
+            if ($this->originalToggledTableColumns === []) {
+                $this->originalToggledTableColumns = $this->toggledTableColumns;
+            }
 
             foreach (Arr::dot($viewState->toggledTableColumns) as $column => $value) {
                 Arr::set($this->toggledTableColumns, $column, $value);
             }
+
+            $this->updatedToggledTableColumns();
         }
 
         if (
@@ -164,6 +172,38 @@ trait HasTableViews
             ($this->activeTab !== $viewState->activeTab)
         ) {
             $this->activeTab = $viewState->activeTab;
+
+            if (method_exists($this, 'updatedActiveTab')) {
+                $this->updatedActiveTab();
+            }
+        }
+
+        $this->updatedActiveTableView();
+    }
+
+    public function removeActiveTableView(): void
+    {
+        $this->activeTableViewKey = null;
+
+        // Table search and column searches are handled by this call.
+        $this->removeTableFilters();
+
+        $this->tableSortColumn = null;
+        $this->tableSortDirection = null;
+        $this->updatedTableSortColumn();
+
+        $this->tableGrouping = null;
+        $this->tableGroupingDirection = null;
+        $this->updatedTableGroupColumn();
+
+        if (filled($this->originalToggledTableColumns)) {
+            $this->toggledTableColumns = $this->originalToggledTableColumns;
+
+            $this->updatedToggledTableColumns();
+        }
+
+        if (property_exists($this, 'activeTab')) {
+            $this->activeTab = null;
 
             if (method_exists($this, 'updatedActiveTab')) {
                 $this->updatedActiveTab();
@@ -239,12 +279,12 @@ trait HasTableViews
             ->where('model_type', static::getResource()::getModel())
             ->get()
             ->sort(static fn (CustomTableView $a, CustomTableView $b): int => [
-                    ! $a->isGloballyHighlighted(),
-                    ! $a->isFavorite(),
-                ] <=> [
-                    ! $b->isGloballyHighlighted(),
-                    ! $b->isFavorite(),
-                ])
+                ! $a->isGloballyHighlighted(),
+                ! $a->isFavorite(),
+            ] <=> [
+                ! $b->isGloballyHighlighted(),
+                ! $b->isFavorite(),
+            ])
             ->mapWithKeys(static fn (CustomTableView $customTableView): array => [
                 $customTableView->getKey() => $customTableView->toTableView(),
             ])
@@ -270,38 +310,5 @@ trait HasTableViews
         $table = md5($this::class);
 
         return "filament-table-views::active-table-view.{$table}_sort";
-    }
-
-    public function resetTableQueryConstraints(): void
-    {
-        $this->removeTableFilters();
-
-        $this->resetTableSearch();
-        $this->resetTableColumnSearches();
-
-        $this->tableSortDirection = null;
-        $this->tableSortColumn = null;
-        $this->updatedTableSortColumn();
-
-        $this->tableGrouping = null;
-        $this->tableGroupingDirection = null;
-        $this->updatedTableGroupColumn();
-
-        if (
-            filled($this->cachedToggledTableColumns) &&
-            $this->cachedToggledTableColumns !== $this->toggledTableColumns
-        ) {
-            $this->toggledTableColumns = $this->cachedToggledTableColumns;
-
-            $this->cachedToggledTableColumns = [];
-        }
-
-        if (property_exists($this, 'activeTab')) {
-            $this->activeTab = null;
-
-            if (method_exists($this, 'updatedActiveTab')) {
-                $this->updatedActiveTab();
-            }
-        }
     }
 }

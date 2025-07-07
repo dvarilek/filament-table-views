@@ -182,34 +182,34 @@ class TableView extends Component
     }
 
     /**
-     * @param  array<string, mixed> | Closure $toggledTableColumns
+     * @param  array<string, mixed> | Closure $columns
      * @return $this
      */
-    public function toggledTableColumns(array | Closure $toggledTableColumns = []): static
+    public function toggledTableColumns(array | Closure $columns = []): static
     {
-        $this->toggledTableColumns = $toggledTableColumns;
+        $this->toggledTableColumns = $columns;
 
         return $this;
     }
 
     /**
-     * @param  list<string> | Closure $visibleTableColumns
+     * @param  list<string> | Closure $columns
      * @return $this
      */
-    public function visibleTableColumns(array | Closure $visibleTableColumns = []): static
+    public function visibleTableColumns(array | Closure $columns = []): static
     {
-        $this->visibleTableColumns = $visibleTableColumns;
+        $this->visibleTableColumns = $columns;
 
         return $this;
     }
 
     /**
-     * @param  list<string> | Closure $hiddenTableColumns
+     * @param  list<string> | Closure $columns
      * @return $this
      */
-    public function hiddenTableColumns(array | Closure $hiddenTableColumns = []): static
+    public function hiddenTableColumns(array | Closure $columns = []): static
     {
-        $this->hiddenTableColumns = $hiddenTableColumns;
+        $this->hiddenTableColumns = $columns;
 
         return $this;
     }
