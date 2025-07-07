@@ -149,16 +149,15 @@ trait HasTableViews
             $this->updatedTableColumnSearches();
         }
 
-        if (
-            filled($this->toggledTableColumns) || filled($viewState->toggledTableColumns) &&
-            ($this->toggledTableColumns !== $viewState->toggledTableColumns)
-        ) {
-            // Columns are always explicitly preserved, so they can be restored when no view is active.
-            // Otherwise, users might reasonably perceive this altered state as a bug.
-            if ($this->originalToggledTableColumns === []) {
-                $this->originalToggledTableColumns = $this->toggledTableColumns;
-            }
+        // Columns are always explicitly preserved, so they can be restored when no view is active.
+        // Otherwise, users might reasonably perceive this altered state as a bug.
+        if (blank($this->originalToggledTableColumns)) {
+            $this->originalToggledTableColumns = $this->toggledTableColumns;
+        } else {
+            $this->toggledTableColumns = $this->originalToggledTableColumns;
+        }
 
+        if (filled($this->toggledTableColumns) || filled($viewState->toggledTableColumns)) {
             foreach (Arr::dot($viewState->toggledTableColumns) as $column => $value) {
                 Arr::set($this->toggledTableColumns, $column, $value);
             }
@@ -198,6 +197,7 @@ trait HasTableViews
 
         if (filled($this->originalToggledTableColumns)) {
             $this->toggledTableColumns = $this->originalToggledTableColumns;
+            $this->originalToggledTableColumns = [];
 
             $this->updatedToggledTableColumns();
         }
