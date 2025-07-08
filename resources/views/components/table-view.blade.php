@@ -6,27 +6,16 @@
 @props([
     'tableView',
     'key',
+    'iconPosition' => null,
     'isActive' => false
 ])
 
 @php
     $label = $tableView->getLabel();
     $tooltip = $tableView->getTooltip();
-
-    $icon = $tableView->getIcon();
-    $iconPosition = $tableView->getIconPosition();
-    $iconSize = $tableView->getIconSize();
     $color = $tableView->getColor();
 
-    $iconClasses = \Illuminate\Support\Arr::toCssClasses([
-        'h-5 w-5',
-        match ($iconSize) {
-            IconSize::Small => 'h-4 w-4',
-            IconSize::Medium => 'h-5 w-5',
-            IconSize::Large => 'h-6 w-6',
-            default => $iconSize,
-        }
-    ]);
+    $icon = $tableView->getIcon();
 @endphp
 
 <button
@@ -73,7 +62,9 @@
                             'icon' => $icon,
                         ])
                     )
-                    ->class([$iconClasses])
+                    ->class([
+                        'h-5 w-5'
+                    ])
                 "
             />
         @endif
@@ -90,7 +81,9 @@
                             'icon' => $icon,
                         ])
                     )
-                    ->class([$iconClasses])
+                    ->class([
+                        'h-5 w-5'
+                    ])
                 "
             />
         @endif

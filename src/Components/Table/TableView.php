@@ -10,6 +10,7 @@ use Filament\Support\Components\Component;
 use Filament\Support\Concerns\HasExtraAttributes;
 use Filament\Support\Concerns\HasIcon;
 use Illuminate\Database\Eloquent\Builder;
+use Exception;
 use Illuminate\Support\Arr;
 
 class TableView extends Component
@@ -27,6 +28,8 @@ class TableView extends Component
     protected string | array | Closure | null $color = null;
 
     protected ?Closure $modifyQueryUsing = null;
+
+    protected int | string | Closure | null $identifier = null;
 
     protected bool | Closure $isPublic = true;
 
@@ -111,6 +114,13 @@ class TableView extends Component
     public function modifyQueryUsing(?Closure $callback): static
     {
         $this->modifyQueryUsing = $callback;
+
+        return $this;
+    }
+
+    public function identifier(int | string | Closure $value): static
+    {
+        $this->identifier = $value;
 
         return $this;
     }
@@ -249,6 +259,17 @@ class TableView extends Component
     public function hasModifyQueryUsing(): bool
     {
         return $this->modifyQueryUsing instanceof Closure;
+    }
+
+    public function getIdentifier(): string
+    {
+        $identifier = $this->evaluate($this->identifier) ?? $this->getLabel();
+
+        if (! $identifier) {
+            throw new Exception('A table view must have an identifier to distinguish it from other table views.');
+        }
+
+        return (string) $identifier;
     }
 
     public function isPublic(): bool

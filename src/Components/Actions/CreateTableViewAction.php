@@ -15,7 +15,7 @@ use Filament\Tables\Contracts\HasTable;
 class CreateTableViewAction extends TableViewAction
 {
     /**
-     * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification | null
+     * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification | null
      */
     protected ?Closure $modifyAfterTableViewCreatedNotificationUsing = null;
 
@@ -47,10 +47,10 @@ class CreateTableViewAction extends TableViewAction
         $this->form(static fn (CreateTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (CreateTableViewAction $action, HasTable $livewire, array $data): void {
-            $viewModelType = $action->getModel();
+            $tableViewModelType = $action->getModel();
 
-            if (! $viewModelType) {
-                throw new Exception('The CreateViewAction must have a viewTypeModel set.');
+            if (! $tableViewModelType) {
+                throw new Exception('The CreateViewAction must have a table view model type set.');
             }
 
             /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
@@ -64,25 +64,28 @@ class CreateTableViewAction extends TableViewAction
                 throw new Exception('User class ' . $user::class . ' must implement ' . HasTableViewOwnership::class);
             }
 
-            /* @var \Dvarilek\FilamentTableViews\Components\Table\TableView $tableView */
+            /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
-                'model_type' => $viewModelType,
+                'model_type' => $tableViewModelType,
                 'view_state' => TableViewState::fromLivewire($livewire),
             ]);
 
-            $notification = $this->getAfterTableViewCreatedNotification();
+            $notification = $action->getAfterTableViewCreatedNotification();
 
-            if ($this->modifyAfterTableViewCreatedNotificationUsing) {
-                $notification = ($this->modifyAfterTableViewCreatedNotificationUsing)($notification, $tableView);
+            if ($action->modifyAfterTableViewCreatedNotificationUsing) {
+                $notification = ($action->modifyAfterTableViewCreatedNotificationUsing)($notification, $tableView);
             }
+
+            /** @phpstan-ignore-next-line */
+            $livewire->toggleActiveTableView((string) $tableView->getKey());
 
             $notification->send();
         });
     }
 
     /**
-     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification  $callback
+     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification  $callback
      * @return $this
      */
     public function afterTableViewCreatedNotification(Closure $callback): static

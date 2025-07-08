@@ -6,6 +6,7 @@ namespace Dvarilek\FilamentTableViews;
 
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -16,7 +17,15 @@ class FilamentTableViewsServiceProvider extends PackageServiceProvider
         $package
             ->name('filament-table-views')
             ->hasViews('filament-table-views')
-            ->hasTranslations();
+            ->hasTranslations()
+            ->hasMigrations('create_user_table_views_table')
+            ->hasInstallCommand(function (InstallCommand $command) {
+                $command
+                    ->publishConfigFile()
+                    ->publishMigrations()
+                    ->askToRunMigrations()
+                    ->askToStarRepoOnGitHub('dvarilek/filament-table-views');
+            });
     }
 
     public function packageBooted(): void

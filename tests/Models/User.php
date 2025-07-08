@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends \Illuminate\Foundation\Auth\User implements HasTableViewOwnership
 {
-    use OwnsTableViews, HasFactory;
+    use HasFactory;
+    use OwnsTableViews;
 
     protected static string $factory = UserFactory::class;
 }

@@ -10,7 +10,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Livewire\Component;
 
-class TestLivewire extends Component implements HasForms, Tables\Contracts\HasTable
+class LivewirePropertyFixture extends Component implements HasForms, Tables\Contracts\HasTable
 {
     use InteractsWithForms;
     use Tables\Concerns\InteractsWithTable;
@@ -57,8 +57,12 @@ class TestLivewire extends Component implements HasForms, Tables\Contracts\HasTa
                 Tables\Grouping\Group::make('created_at'),
             ])
             ->columns([
-                TextColumn::make('currency'),
-                TextColumn::make('total'),
+                TextColumn::make('currency')
+                    ->toggleable()
+                    ->searchable(),
+                TextColumn::make('total')
+                    ->toggleable()
+                    ->searchable(),
             ]);
     }
 

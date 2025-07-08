@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Models;
 
 use Dvarilek\FilamentTableViews\Contracts\ToTableView;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
@@ -46,6 +48,9 @@ class CustomTableView extends Model implements ToTableView
     ];
 
     protected $casts = [
+        'is_public' => 'boolean',
+        'is_favorite' => 'boolean',
+        'is_globally_highlighted' => 'boolean',
         'view_state' => TableViewState::class,
     ];
 
@@ -90,6 +95,7 @@ class CustomTableView extends Model implements ToTableView
         return TableView::make($this->name)
             ->icon($this->icon)
             ->color($this->color)
+            ->identifier($this->getKey())
             ->public($this->is_public)
             ->favorite($this->is_favorite)
             ->globallyHighlighted($this->is_globally_highlighted)

@@ -9,6 +9,7 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
+use Filament\Support\Enums\IconPosition;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Computed;
@@ -27,6 +28,8 @@ trait HasTableViews
      */
     public array $originalToggledTableColumns = [];
 
+    protected ?TableView $cachedActiveTableView = null;
+
     /**
      * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
      */
@@ -37,16 +40,96 @@ trait HasTableViews
         ];
     }
 
+    public function getTableViewIconPosition(): ?IconPosition
+    {
+        return config('filament-table-views.table_views.table_view_icon_position', IconPosition::Before);
+    }
+
+    public function persistsActiveTableViewInSession(): bool
+    {
+        return config('filament-table-views.table_views.persists_active_table_view_in_session', false);
+    }
+
     public function createTableViewAction(): Action
     {
         return CreateTableViewAction::make()
-            ->model($this->getViewModelType());
+            ->model($this->getTableViewModelType());
+    }
+
+    /**
+     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     */
+    public function getDefaultTableViews(): array
+    {
+        return collect($this->getTableViews())
+            ->mapWithKeys(static function (TableView $tableView) {
+                $key = $tableView->getLabel();
+
+                return [
+                    $key => $tableView->identifier($key),
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     */
+    #[Computed(persist: true, key: 'filament-table-views::custom-table-views-computed-property')]
+    public function getCustomTableViews(): array
+    {
+        /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
+            return [];
+        }
+
+        /* @var array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView> */
+        return CustomTableView::query()
+            ->whereMorphedTo('owner', $user)
+            ->where('model_type', static::getTableViewModelType())
+            ->get()
+            ->sort(static fn (CustomTableView $a, CustomTableView $b): int => [
+                    ! $a->isGloballyHighlighted(),
+                    ! $a->isFavorite(),
+                ] <=> [
+                    ! $b->isGloballyHighlighted(),
+                    ! $b->isFavorite(),
+                ])
+            ->mapWithKeys(static fn(CustomTableView $customTableView): array => [
+                $customTableView->getKey() => $customTableView->toTableView(),
+            ])
+            ->toArray();
+    }
+
+    protected function getActiveTableView(): ?TableView
+    {
+        if ($this->cachedActiveTableView) {
+            return $this->cachedActiveTableView;
+        }
+
+        if (! $this->activeTableViewKey) {
+            return null;
+        }
+
+        $activeTableView = collect([
+            ...$this->getDefaultTableViews(),
+            ...$this->getCustomTableViews(),
+        ])
+            ->first(fn (TableView $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
+
+        return $this->cachedActiveTableView = $activeTableView;
     }
 
     /**
      * @return class-string<\Illuminate\Database\Eloquent\Model>
      */
-    protected static function getViewModelType(): string
+    protected static function getTableViewModelType(): string
     {
         return static::getResource()::getModel();
     }
@@ -92,7 +175,13 @@ trait HasTableViews
 
             $this->activeTableViewKey = $tableViewKey;
 
-            $this->loadStateFromTableView($this->getActiveTableView());
+            $activeTableView = $this->getActiveTableView();
+
+            if (! $activeTableView) {
+                return;
+            }
+
+            $this->loadStateFromTableView($activeTableView);
         } finally {
             $table
                 ->persistFiltersInSession($originalShouldPersistTableFiltersInSession)
@@ -176,8 +265,6 @@ trait HasTableViews
                 $this->updatedActiveTab();
             }
         }
-
-        $this->updatedActiveTableView();
     }
 
     public function removeActiveTableView(): void
@@ -209,6 +296,8 @@ trait HasTableViews
                 $this->updatedActiveTab();
             }
         }
+
+        $this->cachedActiveTableView = null;
     }
 
     public function updatedActiveTableView(): void
@@ -241,68 +330,6 @@ trait HasTableViews
         $this->applyActiveTableViewToTableQuery($query);
 
         return parent::filterTableQuery($query);
-    }
-
-    /**
-     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
-     */
-    public function getDefaultTableViews(): array
-    {
-        return collect($this->getTableViews())
-            ->mapWithKeys(static fn (TableView $tableView): array => [
-                $tableView->getLabel() => $tableView,
-            ])
-            ->toArray();
-    }
-
-    /**
-     * @return array<mixed, \Dvarilek\FilamentTableViews\Models\CustomTableView>
-     */
-    #[Computed(persist: true, key: 'filament-table-views::custom-table-views-computed-property')]
-    public function getCustomTableViews(): array
-    {
-        /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
-        $user = auth()->user();
-
-        if (! $user) {
-            return [];
-        }
-
-        if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
-            return [];
-        }
-
-        /* @var \Illuminate\Database\Eloquent\Builder<CustomTableView> $tableViews */
-        $tableViews = $user::query()->tableViews();
-
-        return $tableViews
-            ->where('model_type', static::getResource()::getModel())
-            ->get()
-            ->sort(static fn (CustomTableView $a, CustomTableView $b): int => [
-                ! $a->isGloballyHighlighted(),
-                ! $a->isFavorite(),
-            ] <=> [
-                ! $b->isGloballyHighlighted(),
-                ! $b->isFavorite(),
-            ])
-            ->mapWithKeys(static fn (CustomTableView $customTableView): array => [
-                $customTableView->getKey() => $customTableView->toTableView(),
-            ])
-            ->toArray();
-    }
-
-    protected function getActiveTableView(): ?TableView
-    {
-        return collect([
-            ...$this->getDefaultTableViews(),
-            ...$this->getCustomTableViews(),
-        ])
-            ->first(fn (TableView $tableView) => $tableView->getLabel() === $this->activeTableViewKey);
-    }
-
-    public function persistsActiveTableViewInSession(): bool
-    {
-        return false; // TODO: From plugin provider maybe
     }
 
     public function getActiveTableViewSessionKey(): string

@@ -3,6 +3,7 @@
         [$defaultTableViews, $customTableViews] = [$this->getDefaultTableViews(), $this->getCustomTableViews()];
 
         $livewireId = $this->getId();
+        $tableViewIconPosition = $this->getTableViewIconPosition();
         $activeTableViewKey = $this->activeTableViewKey;
     @endphp
 
@@ -18,6 +19,7 @@
                         :wire-key="'filament-table-views-default-view-' . $key . '-' . $livewireId"
                         :tableView="$tableView"
                         :key="$key"
+                        :iconPosition="$tableViewIconPosition"
                         :isActive="$activeTableViewKey === $key"
                     />
                 @endforeach
@@ -26,19 +28,18 @@
                     <span class="border-e h-6 border-gray-300 dark:border-gray-700"></span>
                 @endif
 
-                @foreach($customTableViews as $key => $customTableView)
+                @foreach(($customTableViews) as $key => $customTableView)
                     <x-filament-table-views::table-view
                         :wire-key="'filament-table-views-custom-view-' . $key . '-' . $livewireId"
                         :tableView="$customTableView"
                         :key="$key"
-                        :isActive="$activeTableViewKey === $key"
+                        :iconPosition="$tableViewIconPosition"
+                        :isActive="$activeTableViewKey === (string) $key"
                     />
                 @endforeach
             </div>
 
             {{ $this->createTableViewAction }}
         </nav>
-
-
     @endif
 @endif

@@ -13,13 +13,14 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
+use Dvarilek\FilamentTableViews\Models\CustomTableView;
 
 class EditTableViewAction extends TableViewAction
 {
     protected ?Closure $modifyShouldUpdateViewFormComponentUsing = null;
 
     /**
-     * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification | null
+     * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification | null
      */
     protected ?Closure $modifyAfterTableViewUpdatedNotificationUsing = null;
 
@@ -51,10 +52,10 @@ class EditTableViewAction extends TableViewAction
         $this->form(static fn (EditTableViewAction $action) => $action->getFormComponents());
 
         $this->action(static function (EditTableViewAction $action, HasTable $livewire, array $data): void {
-            $viewModelType = $action->getModel();
+            $tableViewModelType = $action->getModel();
 
-            if (! $viewModelType) {
-                throw new Exception('The EditViewAction must have a viewTypeModel set.');
+            if (! $tableViewModelType) {
+                throw new Exception('The CreateViewAction must have a table view model type set.');
             }
 
             /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
@@ -74,16 +75,16 @@ class EditTableViewAction extends TableViewAction
 
             unset($data['should_update_view']);
 
-            /* @var \Dvarilek\FilamentTableViews\Components\Table\TableView $tableView */
+            /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $tableView */
             $tableView = $user->tableViews()->create([
                 ...$data,
-                'model_type' => $viewModelType,
+                'model_type' => $tableViewModelType,
             ]);
 
-            $notification = $this->getAfterTableViewUpdatedNotification();
+            $notification = $action->getAfterTableViewUpdatedNotification();
 
-            if ($this->modifyAfterTableViewUpdatedNotificationUsing) {
-                $notification = ($this->modifyAfterTableViewUpdatedNotificationUsing)($notification, $tableView);
+            if ($action->modifyAfterTableViewUpdatedNotificationUsing) {
+                $notification = ($action->modifyAfterTableViewUpdatedNotificationUsing)($notification, $tableView);
             }
 
             $notification->send();
@@ -98,7 +99,7 @@ class EditTableViewAction extends TableViewAction
     }
 
     /**
-     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Components\Table\TableView): \Filament\Notifications\Notification  $callback
+     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification  $callback
      * @return $this
      */
     public function afterTableViewUpdatedNotification(Closure $callback): static

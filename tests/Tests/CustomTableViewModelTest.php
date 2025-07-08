@@ -6,7 +6,7 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Tests\Models\Order;
 use Dvarilek\FilamentTableViews\Tests\Models\User;
-use Dvarilek\FilamentTableViews\Tests\Tests\Fixtures\TestLivewire;
+use Dvarilek\FilamentTableViews\Tests\Tests\Fixtures\LivewirePropertyFixture;
 
 use function Pest\Livewire\livewire;
 
@@ -16,7 +16,7 @@ beforeEach(function () {
 
 it('stores DTO as JSON in the database', function () {
     /* @var \Filament\Tables\Contracts\HasTable $livewire */
-    $livewire = livewire(TestLivewire::class)->instance();
+    $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $state = TableViewState::fromLivewire($livewire);
 
@@ -61,7 +61,7 @@ it('stores DTO as JSON in the database', function () {
 
 it('casts stored JSON back to DTO', function () {
     /* @var \Filament\Tables\Contracts\HasTable $livewire */
-    $livewire = livewire(TestLivewire::class)->instance();
+    $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $originalState = TableViewState::fromLivewire($livewire);
 
@@ -113,6 +113,7 @@ it('table view model can be converted into table view', function () {
         ->getLabel()->toBe($model->name)
         ->getIcon()->toBe($model->icon)
         ->getColor()->toBe($model->color)
+        ->getIdentifier()->toBe((string) $model->getKey())
         ->isPublic()->toBe($model->is_public)
         ->isFavorite()->toBe($model->is_favorite)
         ->isGloballyHighlighted()->toBe($model->is_globally_highlighted)
