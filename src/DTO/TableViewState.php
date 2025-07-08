@@ -73,7 +73,7 @@ final readonly class TableViewState implements Arrayable, Castable
                     tableSortDirection: $data['tableSortDirection'] ?? null,
                     tableGrouping: $data['tableGrouping'] ?? null,
                     tableGroupingDirection: $data['tableGroupingDirection'] ?? null,
-                    tableSearch: $data['search'] ?? null,
+                    tableSearch: $data['tableSearch'] ?? null,
                     tableColumnSearches: $data['tableColumnSearches'] ?? [],
                     toggledTableColumns: $data['toggledTableColumns'] ?? [],
                     activeTab: $data['activeTab'] ?? null,
