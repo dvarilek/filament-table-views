@@ -88,7 +88,7 @@ it('casts stored JSON back to DTO', function () {
         ->activeTab->toBe($originalState->activeTab);
 });
 
-it('table view model can be converted into table view', function () {
+test('table view model can be converted into table view', function () {
     /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
     $user = auth()->user();
 

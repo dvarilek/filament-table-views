@@ -34,6 +34,16 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
         return Product::class;
     }
 
+    public function mount(): void
+    {
+        $this->toggledTableColumns = [
+            'name' => false,
+            'quantity' => false,
+            'created_at' => true,
+            'updated_at' => true,
+        ];
+    }
+
     public function getTableViews(): array
     {
         return [
@@ -93,22 +103,16 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
 
     public function table(Table $table): Table
     {
-        $this->forget
-
         return $table
             ->query(Product::query())
             ->groups([
                 Tables\Grouping\Group::make('status'),
             ])
             ->columns([
-                TextColumn::make('name')
-                    ->toggleable(),
-                TextColumn::make('quantity')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('created_at')
-                    ->toggleable(),
-                TextColumn::make('updated_at')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('name'),
+                TextColumn::make('quantity'),
+                TextColumn::make('created_at'),
+                TextColumn::make('updated_at'),
             ])
             ->filters([
                 SelectFilter::make('status')

@@ -58,10 +58,8 @@ class LivewirePropertyFixture extends Component implements HasForms, Tables\Cont
             ])
             ->columns([
                 TextColumn::make('currency')
-                    ->toggleable()
                     ->searchable(),
                 TextColumn::make('total')
-                    ->toggleable()
                     ->searchable(),
             ]);
     }
