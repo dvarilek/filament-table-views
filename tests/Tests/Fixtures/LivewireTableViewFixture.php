@@ -104,6 +104,10 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
     public function table(Table $table): Table
     {
         return $table
+            ->persistFiltersInSession()
+            ->persistSortInSession()
+            ->persistSearchInSession()
+            ->persistColumnSearchesInSession()
             ->query(Product::query())
             ->groups([
                 Tables\Grouping\Group::make('status'),

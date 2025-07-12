@@ -23,6 +23,7 @@
         $attributes
             ->merge([
                 'x-on:click' => '$wire.call(\'toggleActiveTableView\', ' . \Illuminate\Support\Js::from($key) . ')',
+                'wire:loading.attr' => 'disabled',
                 'x-tooltip' => filled($tooltip)
                     ? '{
                         content: ' . \Illuminate\Support\Js::from($tooltip) . ',
@@ -32,7 +33,7 @@
                 'tabindex' => '-1'
             ], false)
             ->class([
-                 'fi-table-views-view-item min-w-[theme(spacing.5)] p-1'
+                 'fi-table-views-view-item min-w-[theme(spacing.5)] p-1 disabled:opacity-70'
             ])
             // TODO: Handle the border using tailwind, couldn't get it to work
             ->style([
@@ -41,18 +42,18 @@
                     shades: [600],
                     alias: 'tableView',
                 ),
-                "border-bottom-color: rgb(var(--c-600)); border-bottom-width: 2px;" => $isActive,
-                "border-bottom-color: transparent; border-bottom-width: 2px;" => ! $isActive,
+                'border-bottom-color: rgb(var(--c-600)); border-bottom-width: 2px;' => $isActive,
+                'border-bottom-color: transparent; border-bottom-width: 2px;' => ! $isActive,
             ])
     }}
 >
     <div
-        tabindex="0"
-        class="
+        tabindex='0'
+        class='
             fi-table-views-view-item-inner flex items-center gap-x-1.5 transition duration-75 min-h-8 px-2 py-1 text-md font-normal
             hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus:bg-white/10
             dark:focus-visible:bg-white/10 rounded-lg outline-none
-        "
+        '
     >
         @if ($icon && $iconPosition === IconPosition::Before)
             <x-filament::icon
@@ -69,7 +70,7 @@
             />
         @endif
 
-        <span class="p-0.5 truncate">
+        <span class='p-0.5 whitespace-nowrap'>
             {{ $label }}
         </span>
 

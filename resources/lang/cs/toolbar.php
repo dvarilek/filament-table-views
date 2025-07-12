@@ -48,6 +48,18 @@ return [
 
         ],
 
+        'manage-table-views' => [
+
+            'label' => 'Správa pohledů',
+
+            'favorite_subheading' => 'Oblíbené',
+
+            'public_subheading' => 'Veřejné',
+
+            'personal_subheading' => 'Osobní'
+
+        ],
+
         'edit-table-view' => [
 
             'label' => 'Upravit pohled',

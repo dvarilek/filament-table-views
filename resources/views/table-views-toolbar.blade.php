@@ -8,11 +8,11 @@
     @endphp
 
     @if (filled($defaultTableViews) || filled($customTableViews))
-        <nav
-            class="fi-table-views-toolbar flex flex-1 items-center gap-x-2 overflow-x-auto px-2 -mb-6"
+        <div
+            class='px-2 -mb-6 flex flex-1 items-center'
         >
-            <div
-                class="flex flex-1 items-center gap-x-2 overflow-x-auto"
+            <nav
+                class="fi-table-views-toolbar flex flex-1 items-center gap-x-2 overflow-x-auto min-w-0"
             >
                 @foreach($defaultTableViews as $key => $tableView)
                     <x-filament-table-views::table-view
@@ -20,7 +20,7 @@
                         :tableView="$tableView"
                         :key="$key"
                         :iconPosition="$tableViewIconPosition"
-                        :isActive="$activeTableViewKey === $key"
+                        :isActive="$activeTableViewKey === (string) $key"
                     />
                 @endforeach
 
@@ -28,7 +28,7 @@
                     <span class="border-e h-6 border-gray-300 dark:border-gray-700"></span>
                 @endif
 
-                @foreach(($customTableViews) as $key => $customTableView)
+                @foreach($customTableViews as $key => $customTableView)
                     <x-filament-table-views::table-view
                         :wire-key="'filament-table-views-custom-view-' . $key . '-' . $livewireId"
                         :tableView="$customTableView"
@@ -37,9 +37,26 @@
                         :isActive="$activeTableViewKey === (string) $key"
                     />
                 @endforeach
-            </div>
+            </nav>
+            <div class="flex gap-x-4">
+                {{ $this->createTableViewAction }}
 
-            {{ $this->createTableViewAction }}
-        </nav>
+                <x-filament::dropdown
+                    placement="bottom-start"
+                    :width="\Filament\Support\Enums\MaxWidth::ExtraSmall"
+                >
+                    <x-slot name="trigger">
+                        {{ $this->manageTableViewsAction }}
+                    </x-slot>
+
+                    <x-filament-table-views::manager
+                        :customTableViews="$customTableViews"
+                        :defaultTableViews="$defaultTableViews"
+                        :customTableViewActions="$this->getCustomTableViewActions()"
+                        :activeTableViewKey="$activeTableViewKey"
+                    />
+                </x-filament::dropdown>
+            </div>
+        </div>
     @endif
 @endif

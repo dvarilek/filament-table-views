@@ -48,6 +48,18 @@ return [
 
         ],
 
+        'manage-table-views' => [
+
+            'label' => 'Manage table views',
+            
+            'favorite_subheading' => 'Favorites',
+            
+            'public_subheading' => 'Public',
+            
+            'personal_subheading' => 'Personal'
+
+        ],
+
         'edit-table-view' => [
 
             'label' => 'Edit view',

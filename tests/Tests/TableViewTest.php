@@ -189,3 +189,38 @@ it('can set active tab using table view', function () {
     expect($livewire->instance())
         ->activeTab->toBeNull();
 });
+
+it('can persist table view configuration in session', function () {
+    config(['filament-table-views.table_views.persists_active_table_view_in_session' => true]);
+
+    $livewire = livewire(LivewireTableViewFixture::class);
+
+    $livewire->call('toggleActiveTableView', 'firstTableView');
+
+    expect(session($livewire->instance()->getActiveTableViewSessionKey()))
+        ->toBe('firstTableView');
+});
+
+it('doesn\'t persist individual components of active table view in session', function () {
+    $livewire = livewire(LivewireTableViewFixture::class);
+
+    $livewire->call('toggleActiveTableView', 'firstTableView');
+
+    $instance = $livewire->instance();
+
+    expect(session($instance->getTableFiltersSessionKey()))
+        ->toBe([
+            'status' => [
+                'value' => null,
+            ],
+        ])
+        ->and(session($instance->getTableSortSessionKey()))
+        ->toBe([
+            'column' => null,
+            'direction' => null,
+        ])
+        ->and(session($instance->getTableSearchSessionKey()))
+        ->toBe('')
+        ->and(session($instance->getTableColumnSearchesSessionKey()))
+        ->toBeEmpty();
+});

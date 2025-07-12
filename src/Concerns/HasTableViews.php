@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Concerns;
 
 use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
@@ -54,6 +55,28 @@ trait HasTableViews
     {
         return CreateTableViewAction::make()
             ->model($this->getTableViewModelType());
+    }
+
+    public function manageTableViewsAction(): Action
+    {
+        return Action::make('manageTableViews')
+            ->label(__('filament-table-views::toolbar.actions.manage-table-views.label'))
+            ->iconButton()
+            ->icon('heroicon-m-square-3-stack-3d')
+            ->color('gray')
+            ->livewireClickHandlerEnabled(false);
+    }
+
+    public function editTableViewAction(): Action
+    {
+        return EditTableViewAction::make();
+    }
+
+    public function getCustomTableViewActions(): array
+    {
+        return [
+
+        ];
     }
 
     /**
