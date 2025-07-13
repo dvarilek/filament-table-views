@@ -9,10 +9,10 @@
 
     @if (filled($defaultTableViews) || filled($customTableViews))
         <div
-            class='px-2 -mb-6 flex flex-1 items-center'
+            class='px-4 -mb-6 flex flex-1 items-center justify-between gap-x-4'
         >
             <nav
-                class="fi-table-views-toolbar flex flex-1 items-center gap-x-2 overflow-x-auto min-w-0"
+                class="fi-table-views-toolbar flex items-center gap-x-2 overflow-x-auto"
             >
                 @foreach($defaultTableViews as $key => $tableView)
                     <x-filament-table-views::table-view
@@ -38,7 +38,8 @@
                     />
                 @endforeach
             </nav>
-            <div class="flex gap-x-4">
+
+            <div class="flex gap-x-4 items-center">
                 {{ $this->createTableViewAction }}
 
                 <x-filament::dropdown
@@ -50,10 +51,17 @@
                     </x-slot>
 
                     <x-filament-table-views::manager
-                        :customTableViews="$customTableViews"
+                        :livewireId="$livewireId"
+                        :customTableViews="$this->filterTableViewManagerItems($customTableViews)"
                         :defaultTableViews="$defaultTableViews"
                         :customTableViewActions="$this->getCustomTableViewActions()"
                         :activeTableViewKey="$activeTableViewKey"
+                        :tableViewManagerSearch="$this->tableViewManagerSearch"
+                        :tableViewManagerSearchDebounce="$this->getTableViewManagerSearchDebounce()"
+                        :tableViewManagerSearchOnBlur="$this->getTableViewManagerSearchOnBlur()"
+                        :tableViewManagerSearchLabel="$this->getTableViewManagerSearchLabel()"
+                        :tableViewManagerSearchPlaceholder="$this->getTableViewManagerSearchPlaceholder()"
+                        :tableViewManagerActiveFilters="$this->tableViewManagerActiveFilters"
                     />
                 </x-filament::dropdown>
             </div>

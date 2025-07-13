@@ -51,12 +51,46 @@ return [
         'manage-table-views' => [
 
             'label' => 'Manage table views',
-            
-            'favorite_subheading' => 'Favorites',
-            
-            'public_subheading' => 'Public',
-            
-            'personal_subheading' => 'Personal'
+
+            'search' => [
+
+                'label' => 'Search',
+
+                'placeholder' => 'Search',
+
+            ],
+
+            'filters' => [
+
+                'favorite' => 'Favorites',
+
+                'public' => 'Public',
+
+                'personal' => 'Personal',
+
+                'default' => 'Default'
+
+            ],
+
+            'sections' => [
+
+                'favorite' => 'Favorites',
+
+                'public' => 'Public',
+
+                'personal' => 'Personal',
+
+                'default' => 'Default'
+
+            ],
+
+            'empty-state' => [
+
+                'search_empty_state' => 'No matching table views found',
+
+                'no_views_empty_state' => 'No table views available'
+
+            ]
 
         ],
 

@@ -14,13 +14,25 @@ use Filament\Support\Enums\IconPosition;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
+use function Filament\Support\generate_search_term_expression;
 
 /**
  * @mixin \Filament\Tables\Contracts\HasTable
  */
 trait HasTableViews
 {
+    public string $tableViewManagerSearch = '';
+
+    #[Locked]
+    public array $tableViewManagerActiveFilters = [
+        'default' => true,
+        'favorite' => true,
+        'public' => true,
+        'personal' => true
+    ];
+
     #[Url(as: 'tableView')]
     public ?string $activeTableViewKey = null;
 
@@ -46,10 +58,47 @@ trait HasTableViews
         return config('filament-table-views.table_views.table_view_icon_position', IconPosition::Before);
     }
 
+    public function getTableViewManagerSearchLabel(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.search.label');
+    }
+
+    public function getTableViewManagerSearchPlaceholder(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.search.placeholder');
+    }
+
+    public function getTableViewManagerSearchDebounce(): string
+    {
+        return '500ms';
+    }
+
+    public function getTableViewManagerSearchOnBlur(): bool
+    {
+        return false;
+    }
+
     public function persistsActiveTableViewInSession(): bool
     {
         return config('filament-table-views.table_views.persists_active_table_view_in_session', false);
     }
+
+    public function toggleViewManagerFilterButton(string $filterButton): void
+    {
+        if (! array_key_exists($filterButton, $this->tableViewManagerActiveFilters)) {
+            return;
+        }
+
+        $this->tableViewManagerActiveFilters[$filterButton] = !$this->tableViewManagerActiveFilters[$filterButton];
+    }
+
+    public function filterTableViewManagerItems(array $tableViews): array
+    {
+        return collect($tableViews)
+            ->filter(fn(TableView $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
+            ->toArray();
+    }
+
 
     public function createTableViewAction(): Action
     {

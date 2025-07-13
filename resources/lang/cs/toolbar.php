@@ -52,12 +52,45 @@ return [
 
             'label' => 'Správa pohledů',
 
-            'favorite_subheading' => 'Oblíbené',
+            'search' => [
 
-            'public_subheading' => 'Veřejné',
+                'label' => 'Hledat',
 
-            'personal_subheading' => 'Osobní'
+                'placeholder' => 'Hledat',
 
+            ],
+
+            'filters' => [
+
+                'favorite' => 'Oblíbené',
+
+                'public' => 'Veřejné',
+
+                'personal' => 'Osobní',
+
+                'default' => 'Defaultní'
+
+            ],
+
+            'sections' => [
+
+                'favorite' => 'Oblíbené',
+
+                'public' => 'Veřejné',
+
+                'personal' => 'Osobní',
+
+                'default' => 'Defaultní'
+
+            ],
+
+            'empty-state' => [
+
+                'search_empty_state' => 'Nenalezeny žádné odpovídající pohledy',
+
+                'no_views_empty_state' => 'Nejsou k dispozici žádné pohledy'
+            ]
+            
         ],
 
         'edit-table-view' => [

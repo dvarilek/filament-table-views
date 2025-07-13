@@ -33,7 +33,7 @@
                 'tabindex' => '-1'
             ], false)
             ->class([
-                 'fi-table-views-view-item min-w-[theme(spacing.5)] p-1 disabled:opacity-70'
+                 'fi-table-views-view-item  p-1 disabled:opacity-70'
             ])
             // TODO: Handle the border using tailwind, couldn't get it to work
             ->style([
