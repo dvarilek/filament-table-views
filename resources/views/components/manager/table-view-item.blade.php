@@ -2,63 +2,69 @@
     'tableView',
     'key',
     'isActive' => false,
+    'actions' => []
 ])
 
 @php
+    use Filament\Actions\ActionGroup;
+
     $label = $tableView->getLabel();
     $color = $tableView->getColor();
-
     $icon = $tableView->getIcon();
+
+    $record = $tableView->getRecord();
+
+    $actions = array_filter(
+        $actions,
+        static function ($action) use ($record): bool {
+            if (! ($action instanceof ActionGroup) && $record !== null) {
+                $action->record($record);
+            }
+
+            return $action->isVisible();
+        },
+    );
 @endphp
 
-<button
+<div
     {{
         $attributes
-            ->merge([
-                'x-on:click' => '$wire.call(\'toggleActiveTableView\', ' . \Illuminate\Support\Js::from($key) . ')',
-                'type' => 'button',
-                'wire.loading.attr' => 'disabled',
-                'tabindex' => '-1'
-            ])
             ->class([
-                'w-full'
-            ])
-            ->style([
-                \Filament\Support\get_color_css_variables(
-                    $color,
-                    shades: [600],
-                    alias: 'tableView',
-                ),
-                'border-bottom-color: rgb(var(--c-600)); border-bottom-width: 2px;' => $isActive,
-                'border-bottom-color: transparent; border-bottom-width: 2px;' => ! $isActive,
+                "bg-gray-100 dark:bg-white/10" => $isActive,
+                "flex flex-1 justify-between items-center transition duration-75 h-10 px-2 py-1 hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus:bg-white/10 dark:focus-visible:bg-white/10 rounded-lg"
             ])
     }}
 >
-    <div
-        tabindex='0'
-        class='
-            fi-table-views-manager-view-item flex w-full items-center gap-2 whitespace-nowrap rounded-md p-2 text-sm transition-colors duration-75
-            outline-none disabled:pointer-events-none disabled:opacity-70 hover:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5
-            dark:focus-visible:bg-white/5 fi-color-gray h-14 text-base font-semibold leading-6 text-gray-950 dark:text-white px-2 py-1
-        '
+    <button
+        class="flex flex-1 items-center gap-x-1.5 w-3/5 text-sm font-normal outline-none"
+        type="button"
+        wire:click="toggleActiveTableView({{ \Illuminate\Support\Js::from($key) }})"
+        wire:loading.attr="disabled"
     >
         @if ($icon)
             <x-filament::icon
                 :attributes="
-                \Filament\Support\prepare_inherited_attributes(
-                    new \Illuminate\View\ComponentAttributeBag([
-                        'icon' => $icon,
+                    \Filament\Support\prepare_inherited_attributes(
+                        new \Illuminate\View\ComponentAttributeBag([
+                            'icon' => $icon,
+                        ])
+                    )
+                    ->class([
+                        'h-5 w-5'
                     ])
-                )
-                ->class([
-                    'h-5 w-5'
-                ])
-            "
+                "
             />
         @endif
 
-        <span class='flex-1 truncate text-start text-gray-700 dark:text-gray-200'>
-        {{ $label }}
-    </span>
+        <div class="p-0.5 truncate">
+            {{ $label }}
+        </div>
+    </button>
+
+    <div class="flex w-2/5 flex shrink-0 items-center gap-3">
+        @foreach ($actions as $action)
+            {{ $action }}
+        @endforeach
     </div>
-</button>
+</div>
+

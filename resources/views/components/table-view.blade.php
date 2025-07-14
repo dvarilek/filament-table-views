@@ -44,7 +44,7 @@
     <div
         tabindex='0'
         class='
-            fi-table-views-view-item-inner flex items-center gap-x-1.5 transition duration-75 min-h-8 px-2 py-1 text-md font-normal
+            fi-table-views-view-item-inner flex items-center gap-x-1.5 transition duration-75 px-2 py-1 text-md font-normal
             hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus:bg-white/10
             dark:focus-visible:bg-white/10 rounded-lg outline-none
         '
@@ -67,6 +67,5 @@
         <span class='p-0.5 whitespace-nowrap'>
             {{ $label }}
         </span>
-
     </div>
 </button>

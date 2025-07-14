@@ -35,11 +35,7 @@ class EditTableViewAction extends TableViewAction
 
         $this->label(__('filament-table-views::toolbar.actions.edit-table-view.label'));
 
-        $this->modalDescription(__('filament-table-views::toolbar.actions.edit-table-view.description'));
-
         $this->modalSubmitActionLabel(__('filament-table-views::toolbar.actions.edit-table-view.submit_label'));
-
-        $this->iconButton();
 
         $this->icon('heroicon-o-pencil');
 

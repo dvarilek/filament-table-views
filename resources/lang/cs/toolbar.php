@@ -50,6 +50,8 @@ return [
 
             'label' => 'Správa pohledů',
 
+            'reset_label' => 'Reset',
+
             'search' => [
 
                 'label' => 'Hledat',
@@ -88,7 +90,7 @@ return [
 
                 'no_views_empty_state' => 'Nejsou k dispozici žádné pohledy'
             ]
-            
+
         ],
 
         'edit-table-view' => [

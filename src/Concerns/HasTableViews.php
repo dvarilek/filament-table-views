@@ -10,6 +10,7 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Computed;
@@ -85,13 +86,24 @@ trait HasTableViews
         $this->tableViewManagerActiveFilters[$filterButton] = !$this->tableViewManagerActiveFilters[$filterButton];
     }
 
+    public function resetTableViewManager(): void
+    {
+        $this->tableViewManagerSearch = '';
+
+        $this->tableViewManagerActiveFilters = [
+            'default' => true,
+            'favorite' => true,
+            'public' => true,
+            'personal' => true
+        ];
+    }
+
     public function filterTableViewManagerItems(array $tableViews): array
     {
         return collect($tableViews)
             ->filter(fn(TableView $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
             ->toArray();
     }
-
 
     public function createTableViewAction(): Action
     {
@@ -109,9 +121,26 @@ trait HasTableViews
             ->livewireClickHandlerEnabled(false);
     }
 
+    public function getTableViewManagerActions(): array
+    {
+        return [
+            ActionGroup::make([
+                $this->editTableViewAction()
+                    ->label('adwadawd'),
+                Action::make('another')->action(fn () => dd('eafawef'))
+            ])
+        ];
+    }
+
     public function editTableViewAction(): Action
     {
         return EditTableViewAction::make();
+    }
+
+    public function deleteTableViewAction(): Action
+    {
+        return Action::make('deleteTableView')
+            ->action(fn () => dd('d'));
     }
 
     public function getCustomTableViewActions(): array

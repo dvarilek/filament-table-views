@@ -50,6 +50,8 @@ return [
 
             'label' => 'Manage table views',
 
+            'reset_label' => 'Reset',
+            
             'search' => [
 
                 'label' => 'Search',
@@ -60,7 +62,7 @@ return [
 
             'filters' => [
 
-                'favorite' => 'Favorites',
+                'favorite' => 'Favorite',
 
                 'public' => 'Public',
 
@@ -72,7 +74,7 @@ return [
 
             'sections' => [
 
-                'favorite' => 'Favorites',
+                'favorite' => 'Favorite',
 
                 'public' => 'Public',
 
