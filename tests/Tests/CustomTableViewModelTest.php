@@ -101,7 +101,6 @@ test('table view model can be converted into table view', function () {
         'color' => 'primary',
         'is_public' => false,
         'is_favorite' => true,
-        'is_globally_highlighted' => true,
         'model_type' => Order::class,
         'view_state' => $viewState,
     ]);
@@ -116,7 +115,6 @@ test('table view model can be converted into table view', function () {
         ->getIdentifier()->toBe((string) $model->getKey())
         ->isPublic()->toBe($model->is_public)
         ->isFavorite()->toBe($model->is_favorite)
-        ->isGloballyHighlighted()->toBe($model->is_globally_highlighted)
         ->tableFilters($viewState->tableFilters)
         ->tableSort($viewState->tableSortColumn, $viewState->tableSortDirection)
         ->tableGrouping($viewState->tableGrouping, $viewState->tableGroupingDirection)

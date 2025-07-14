@@ -26,8 +26,6 @@ class TableViewAction extends Action
 
     protected ?Closure $modifyIsFavoriteFormComponentUsing = null;
 
-    protected ?Closure $modifyIsGloballyHighlightedFormComponentUsing = null;
-
     protected ?Closure $modifyDescriptionFormComponentUsing = null;
 
     /**
@@ -66,13 +64,6 @@ class TableViewAction extends Action
     public function isFavoriteFormComponent(Closure $callback): static
     {
         $this->modifyIsFavoriteFormComponentUsing = $callback;
-
-        return $this;
-    }
-
-    public function isGloballyHighlightedFormComponent(Closure $callback): static
-    {
-        $this->modifyIsGloballyHighlightedFormComponentUsing = $callback;
 
         return $this;
     }
@@ -132,7 +123,6 @@ class TableViewAction extends Action
             $this->getColorFormComponent(),
             $this->getIsPublicFormComponent(),
             $this->getIsFavoriteFormComponent(),
-            $this->getIsGloballyHighlightedFormComponent(),
             $this->getDescriptionFormComponent(),
         ];
     }
@@ -225,22 +215,7 @@ class TableViewAction extends Action
         return $component;
     }
 
-    public function getIsGloballyHighlightedFormComponent(): ?Field
-    {
-        $component = Toggle::make('is_globally_highlighted')
-            ->label(__('filament-table-views::toolbar.actions.table-view-action.form.is_globally_highlighted'));
 
-        if ($this->modifyIsGloballyHighlightedFormComponentUsing) {
-            $component = $this->evaluate($this->modifyIsGloballyHighlightedFormComponentUsing, [
-                'field' => $component,
-                'component' => $component,
-            ], [
-                Toggle::class => $component,
-            ]) ?? null;
-        }
-
-        return $component;
-    }
 
     public function getDescriptionFormComponent(): ?Field
     {

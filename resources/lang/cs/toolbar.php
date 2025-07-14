@@ -20,8 +20,6 @@ return [
 
                 'is_favorite' => 'Je oblíbený',
 
-                'is_globally_highlighted' => 'Je globálně zvýrazněný',
-
                 'description' => 'Popis',
 
             ],

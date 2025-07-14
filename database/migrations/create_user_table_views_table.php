@@ -23,7 +23,6 @@ return new class extends Migration
 
             $table->boolean('is_public')->default(false);
             $table->boolean('is_favorite')->default(false);
-            $table->boolean('is_globally_highlighted')->default(false);
 
             $table->morphs('owner');
             $table->string('model_type', 255);

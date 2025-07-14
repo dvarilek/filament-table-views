@@ -159,13 +159,13 @@ trait HasTableViews
             ->whereMorphedTo('owner', $user)
             ->where('model_type', static::getTableViewModelType())
             ->get()
-            ->sort(static fn (CustomTableView $a, CustomTableView $b): int => [
-                    ! $a->isGloballyHighlighted(),
-                    ! $a->isFavorite(),
-                ] <=> [
-                    ! $b->isGloballyHighlighted(),
-                    ! $b->isFavorite(),
-                ])
+            // 1. public & favorite
+            // 2. public & not favorite
+            // 3. not public & favorite
+            // 4. not public & not favorite
+            ->sortByDesc(static fn (CustomTableView $tableView) => (
+                $tableView->isPublic() ? 2 : 0) + ($tableView->isFavorite() ? 1 : 0
+            ))
             ->mapWithKeys(static fn(CustomTableView $customTableView): array => [
                 $customTableView->getKey() => $customTableView->toTableView(),
             ])

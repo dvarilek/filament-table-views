@@ -20,8 +20,6 @@ return [
 
                 'is_favorite' => 'Is favorite',
 
-                'is_globally_highlighted' => 'Is globally highlighted',
-
                 'description' => 'Description',
 
             ],

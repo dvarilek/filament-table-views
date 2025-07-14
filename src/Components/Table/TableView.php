@@ -35,8 +35,6 @@ class TableView extends Component
 
     protected bool | Closure $isFavorite = false;
 
-    protected bool | Closure $isGloballyHighlighted = false;
-
     /**
      * @var array<string, mixed> | Closure | null
      */
@@ -135,13 +133,6 @@ class TableView extends Component
     public function favorite(bool | Closure $condition = true): static
     {
         $this->isFavorite = $condition;
-
-        return $this;
-    }
-
-    public function globallyHighlighted(bool | Closure $condition = true): static
-    {
-        $this->isGloballyHighlighted = $condition;
 
         return $this;
     }
@@ -280,11 +271,6 @@ class TableView extends Component
     public function isFavorite(): bool
     {
         return (bool) $this->evaluate($this->isFavorite);
-    }
-
-    public function isGloballyHighlighted(): bool
-    {
-        return (bool) $this->evaluate($this->isGloballyHighlighted);
     }
 
     public function getTableViewState(): TableViewState

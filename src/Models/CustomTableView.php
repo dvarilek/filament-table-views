@@ -19,7 +19,6 @@ use Dvarilek\FilamentTableViews\DTO\TableViewState;
  * @property mixed $color
  * @property bool $is_public
  * @property bool $is_favorite
- * @property bool $is_globally_highlighted
  * @property mixed $owner_id
  * @property class-string<\Illuminate\Contracts\Auth\Authenticatable & \Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership> $owner_type
  * @property class-string<\Illuminate\Database\Eloquent\Model> $model_type
@@ -40,7 +39,6 @@ class CustomTableView extends Model implements ToTableView
         'color',
         'is_public',
         'is_favorite',
-        'is_globally_highlighted',
         'owner_id',
         'owner_type',
         'model_type',
@@ -50,7 +48,6 @@ class CustomTableView extends Model implements ToTableView
     protected $casts = [
         'is_public' => 'boolean',
         'is_favorite' => 'boolean',
-        'is_globally_highlighted' => 'boolean',
         'view_state' => TableViewState::class,
     ];
 
@@ -83,11 +80,6 @@ class CustomTableView extends Model implements ToTableView
         return $this->is_favorite;
     }
 
-    public function isGloballyHighlighted(): bool
-    {
-        return $this->is_globally_highlighted;
-    }
-
     public function toTableView(): TableView
     {
         $tableViewState = $this->view_state;
@@ -98,7 +90,6 @@ class CustomTableView extends Model implements ToTableView
             ->identifier($this->getKey())
             ->public($this->is_public)
             ->favorite($this->is_favorite)
-            ->globallyHighlighted($this->is_globally_highlighted)
             ->tableFilters($tableViewState->tableFilters)
             ->tableSort($tableViewState->tableSortColumn, $tableViewState->tableSortDirection)
             ->tableGrouping($tableViewState->tableGrouping, $tableViewState->tableGroupingDirection)
