@@ -1,7 +1,5 @@
 <?php
 
-use Filament\Support\Enums\IconPosition;
-
 return [
 
     'custom_table_view_model' => [
@@ -19,11 +17,6 @@ return [
     ],
 
     'table_views' => [
-
-        /**
-         * Determines the icon position in a table view tab globally.
-         */
-        'table_view_icon_position' => IconPosition::Before,
 
         /**
          * Determines whether the active table view should be persistent in the user's session globally.

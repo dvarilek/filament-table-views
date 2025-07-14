@@ -10,13 +10,11 @@ use Dvarilek\FilamentTableViews\Components\Table\TableView;
 use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\Models\CustomTableView;
 use Filament\Actions\Action;
-use Filament\Support\Enums\IconPosition;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
-use function Filament\Support\generate_search_term_expression;
 
 /**
  * @mixin \Filament\Tables\Contracts\HasTable
@@ -51,11 +49,6 @@ trait HasTableViews
         return [
 
         ];
-    }
-
-    public function getTableViewIconPosition(): ?IconPosition
-    {
-        return config('filament-table-views.table_views.table_view_icon_position', IconPosition::Before);
     }
 
     public function getTableViewManagerSearchLabel(): ?string

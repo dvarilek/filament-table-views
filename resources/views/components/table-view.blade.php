@@ -1,12 +1,6 @@
-@php
-    use Filament\Support\Enums\IconSize;
-    use Filament\Support\Enums\IconPosition;
-@endphp
-
 @props([
     'tableView',
     'key',
-    'iconPosition' => null,
     'isActive' => false
 ])
 
@@ -55,7 +49,7 @@
             dark:focus-visible:bg-white/10 rounded-lg outline-none
         '
     >
-        @if ($icon && $iconPosition === IconPosition::Before)
+        @if ($icon)
             <x-filament::icon
                 :attributes="
                     \Filament\Support\prepare_inherited_attributes(
@@ -74,19 +68,5 @@
             {{ $label }}
         </span>
 
-        @if ($icon && $iconPosition === IconPosition::After)
-            <x-filament::icon
-                :attributes="
-                    \Filament\Support\prepare_inherited_attributes(
-                        new \Illuminate\View\ComponentAttributeBag([
-                            'icon' => $icon,
-                        ])
-                    )
-                    ->class([
-                        'h-5 w-5'
-                    ])
-                "
-            />
-        @endif
     </div>
 </button>
