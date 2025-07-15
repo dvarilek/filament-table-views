@@ -2,7 +2,7 @@
 
 namespace Dvarilek\FilamentTableViews\Tests\Tests\Fixtures;
 
-use Dvarilek\FilamentTableViews\Components\Table\TableView;
+use Dvarilek\FilamentTableViews\Components\DefaultView;
 use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
 use Dvarilek\FilamentTableViews\Tests\Models\Product;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -47,7 +47,7 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
     public function getTableViews(): array
     {
         return [
-            TableView::make('firstTableView')
+            DefaultView::make('firstTableView')
                 ->tableFilters([
                     'status' => [
                         'value' => 'active',
@@ -68,7 +68,7 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
                     'updated_at',
                 ])
                 ->activeTab('active'),
-            TableView::make('secondTableView')
+            DefaultView::make('secondTableView')
                 ->tableFilters([
                     'status' => [
                         'value' => 'inactive',
@@ -89,7 +89,7 @@ class LivewireTableViewFixture extends Component implements HasForms, Tables\Con
                     'quantity',
                 ])
                 ->activeTab('inactive'),
-            TableView::make('thirdTableView')
+            DefaultView::make('thirdTableView')
                 ->toggledTableColumns([
                     'name' => true,
                     'quantity' => false,

@@ -6,19 +6,22 @@ namespace Dvarilek\FilamentTableViews\Concerns;
 
 use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
-use Dvarilek\FilamentTableViews\Components\Table\TableView;
-use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
-use Dvarilek\FilamentTableViews\Models\CustomTableView;
+use Dvarilek\FilamentTableViews\Components\DefaultView;
+use Dvarilek\FilamentTableViews\Components\TableViewContract;
+use Dvarilek\FilamentTableViews\Components\UserView;
+use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 
 /**
- * @mixin \Filament\Tables\Contracts\HasTable
+ * @mixin HasTable
  */
 trait HasTableViews
 {
@@ -29,7 +32,7 @@ trait HasTableViews
         'default' => true,
         'favorite' => true,
         'public' => true,
-        'personal' => true
+        'personal' => true,
     ];
 
     #[Url(as: 'tableView')]
@@ -40,10 +43,10 @@ trait HasTableViews
      */
     public array $originalToggledTableColumns = [];
 
-    protected ?TableView $cachedActiveTableView = null;
+    protected ?TableViewContract $cachedActiveTableView = null;
 
     /**
-     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     * @return array<string, DefaultView>
      */
     public function getTableViews(): array
     {
@@ -83,7 +86,7 @@ trait HasTableViews
             return;
         }
 
-        $this->tableViewManagerActiveFilters[$filterButton] = !$this->tableViewManagerActiveFilters[$filterButton];
+        $this->tableViewManagerActiveFilters[$filterButton] = ! $this->tableViewManagerActiveFilters[$filterButton];
     }
 
     public function resetTableViewManager(): void
@@ -94,21 +97,19 @@ trait HasTableViews
             'default' => true,
             'favorite' => true,
             'public' => true,
-            'personal' => true
+            'personal' => true,
         ];
     }
 
+    /**
+     * @param  array<mixed, TableViewContract>  $tableViews
+     * @return array<mixed, TableViewContract>
+     */
     public function filterTableViewManagerItems(array $tableViews): array
     {
         return collect($tableViews)
-            ->filter(fn(TableView $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
+            ->filter(fn (TableViewContract $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
             ->toArray();
-    }
-
-    public function createTableViewAction(): Action
-    {
-        return CreateTableViewAction::make()
-            ->model($this->getTableViewModelType());
     }
 
     public function manageTableViewsAction(): Action
@@ -121,15 +122,10 @@ trait HasTableViews
             ->livewireClickHandlerEnabled(false);
     }
 
-    public function getTableViewManagerActions(): array
+    public function createTableViewAction(): Action
     {
-        return [
-            ActionGroup::make([
-                $this->editTableViewAction()
-                    ->label('adwadawd'),
-                Action::make('another')->action(fn () => dd('eafawef'))
-            ])
-        ];
+        return CreateTableViewAction::make()
+            ->model($this->getTableViewModelType());
     }
 
     public function editTableViewAction(): Action
@@ -139,11 +135,51 @@ trait HasTableViews
 
     public function deleteTableViewAction(): Action
     {
-        return Action::make('deleteTableView')
-            ->action(fn () => dd('d'));
+        return Action::make('todo1');
     }
 
-    public function getCustomTableViewActions(): array
+    public function togglePublicAction(): Action
+    {
+        return Action::make('todo3');
+    }
+
+    public function toggleFavoriteAction(): Action
+    {
+        return Action::make('todo2');
+    }
+
+    /**
+     * @return array<Action | ActionGroup>
+     */
+    public function getTableViewManagerUserActions(): array
+    {
+        // TODO: Finish the actions
+        //       Maybe reorganize stuff here into different traits
+        //       Add isVisible and isHidden to TableView
+        //       Add default option (handle public and favorite) + indicator
+        //       Add DefaultViews indicators, maybe consider for UserViews
+        //       Reordering of views (DB persistent)
+        //       TableViewManager configuration object
+        //       Add broader configuration options to views (sizes, labels, allow filters, search etc.)
+        //       Add option to configure from PanelServiceProvider upon registration (global and livewire / resource) instance
+        //       Make sections in view manager collapsible
+        //       UI for toolbar and manager + add plugin classes
+        //       public / private and favorite indicators next to views in manager
+
+        return [
+            ActionGroup::make([
+                $this->togglePublicAction(),
+                $this->toggleFavoriteAction(),
+                $this->editTableViewAction(),
+                $this->deleteTableViewAction(),
+            ]),
+        ];
+    }
+
+    /**
+     * @return array<Action | ActionGroup>
+     */
+    public function getTableViewManagerDefaultActions(): array
     {
         return [
 
@@ -151,12 +187,29 @@ trait HasTableViews
     }
 
     /**
-     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     * @param  array<Action | ActionGroup>  $actions
+     * @return array<Action | ActionGroup>
+     */
+    protected function processRecordToTableViewManagerActions(array $actions, ?SavedTableView $record): array
+    {
+        return array_filter($actions, function (Action | ActionGroup $action) use ($record) {
+            if ($action instanceof ActionGroup) {
+                $this->processRecordToTableViewManagerActions($action->getActions(), $record);
+            } elseif ($record !== null) {
+                $action->record($record);
+            }
+
+            return $action->isVisible();
+        });
+    }
+
+    /**
+     * @return array<string, DefaultView>
      */
     public function getDefaultTableViews(): array
     {
         return collect($this->getTableViews())
-            ->mapWithKeys(static function (TableView $tableView) {
+            ->mapWithKeys(static function (DefaultView $tableView) {
                 $key = $tableView->getLabel();
 
                 return [
@@ -167,24 +220,19 @@ trait HasTableViews
     }
 
     /**
-     * @return array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView>
+     * @return array<string, UserView>
      */
-    #[Computed(persist: true, key: 'filament-table-views::custom-table-views-computed-property')]
-    public function getCustomTableViews(): array
+    #[Computed(persist: true, key: 'filament-table-views::user-table-views-computed-property')]
+    public function getUserTableViews(): array
     {
-        /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
         $user = auth()->user();
 
         if (! $user) {
             return [];
         }
 
-        if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
-            return [];
-        }
-
-        /* @var array<string, \Dvarilek\FilamentTableViews\Components\Table\TableView> */
-        return CustomTableView::query()
+        /* @var array<string, UserView> */
+        return SavedTableView::query()
             ->whereMorphedTo('owner', $user)
             ->where('model_type', static::getTableViewModelType())
             ->get()
@@ -192,16 +240,18 @@ trait HasTableViews
             // 2. public & not favorite
             // 3. not public & favorite
             // 4. not public & not favorite
-            ->sortByDesc(static fn (CustomTableView $tableView) => (
-                $tableView->isPublic() ? 2 : 0) + ($tableView->isFavorite() ? 1 : 0
+            ->sortByDesc(static fn (SavedTableView $tableView) => (
+                $tableView->isPublic() ? 2 : 0
+            ) + (
+                $tableView->isFavorite() ? 1 : 0
             ))
-            ->mapWithKeys(static fn(CustomTableView $customTableView): array => [
-                $customTableView->getKey() => $customTableView->toTableView(),
+            ->mapWithKeys(static fn (SavedTableView $tableView): array => [
+                $tableView->getKey() => UserView::make($tableView),
             ])
             ->toArray();
     }
 
-    protected function getActiveTableView(): ?TableView
+    protected function getActiveTableView(): ?TableViewContract
     {
         if ($this->cachedActiveTableView) {
             return $this->cachedActiveTableView;
@@ -213,15 +263,15 @@ trait HasTableViews
 
         $activeTableView = collect([
             ...$this->getDefaultTableViews(),
-            ...$this->getCustomTableViews(),
+            ...$this->getUserTableViews(),
         ])
-            ->first(fn (TableView $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
+            ->first(fn (TableViewContract $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
 
         return $this->cachedActiveTableView = $activeTableView;
     }
 
     /**
-     * @return class-string<\Illuminate\Database\Eloquent\Model>
+     * @return class-string<Model>
      */
     protected static function getTableViewModelType(): string
     {
@@ -287,7 +337,7 @@ trait HasTableViews
         $this->updatedActiveTableView();
     }
 
-    protected function loadStateFromTableView(TableView $tableView): void
+    protected function loadStateFromTableView(TableViewContract $tableView): void
     {
         $viewState = $tableView->getTableViewState();
 
@@ -410,7 +460,7 @@ trait HasTableViews
     {
         $activeTableView = $this->getActiveTableView();
 
-        if (! $activeTableView) {
+        if (! ($activeTableView instanceof DefaultView)) {
             return;
         }
 

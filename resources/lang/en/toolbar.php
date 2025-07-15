@@ -51,7 +51,7 @@ return [
             'label' => 'Manage table views',
 
             'reset_label' => 'Reset',
-            
+
             'search' => [
 
                 'label' => 'Search',
@@ -68,7 +68,7 @@ return [
 
                 'personal' => 'Personal',
 
-                'default' => 'Default'
+                'default' => 'Default',
 
             ],
 
@@ -80,7 +80,7 @@ return [
 
                 'personal' => 'Personal',
 
-                'default' => 'Default'
+                'default' => 'Default',
 
             ],
 
@@ -88,9 +88,9 @@ return [
 
                 'search_empty_state' => 'No matching table views found',
 
-                'no_views_empty_state' => 'No table views available'
+                'no_views_empty_state' => 'No table views available',
 
-            ]
+            ],
 
         ],
 

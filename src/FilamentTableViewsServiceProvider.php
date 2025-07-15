@@ -18,7 +18,7 @@ class FilamentTableViewsServiceProvider extends PackageServiceProvider
             ->name('filament-table-views')
             ->hasViews('filament-table-views')
             ->hasTranslations()
-            ->hasMigrations('create_user_table_views_table')
+            ->hasMigrations('create_saved_table_views_table')
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()

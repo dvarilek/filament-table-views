@@ -2,25 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Dvarilek\FilamentTableViews\Components\Table;
+namespace Dvarilek\FilamentTableViews\Components;
 
 use Closure;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
+use Exception;
 use Filament\Support\Components\Component;
 use Filament\Support\Concerns\HasExtraAttributes;
-use Filament\Support\Concerns\HasIcon;
+use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Database\Eloquent\Builder;
-use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
-class TableView extends Component
+class DefaultView extends Component implements TableViewContract
 {
     use HasExtraAttributes;
-    use HasIcon;
 
     protected string | Closure | null $label = null;
 
     protected string | Closure | null $tooltip = null;
+
+    protected string | Htmlable | Closure | null $icon = null;
 
     /**
      * @var string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | Closure | null
@@ -30,10 +33,6 @@ class TableView extends Component
     protected ?Closure $modifyQueryUsing = null;
 
     protected int | string | Closure | null $identifier = null;
-
-    protected bool | Closure $isPublic = true;
-
-    protected bool | Closure $isFavorite = false;
 
     /**
      * @var array<string, mixed> | Closure | null
@@ -92,6 +91,13 @@ class TableView extends Component
         return $this;
     }
 
+    public function icon(string | Htmlable | Closure | null $icon): static
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
     public function tooltip(string | Closure | null $tooltip): static
     {
         $this->tooltip = $tooltip;
@@ -123,22 +129,8 @@ class TableView extends Component
         return $this;
     }
 
-    public function public(bool | Closure $condition = true): static
-    {
-        $this->isPublic = $condition;
-
-        return $this;
-    }
-
-    public function favorite(bool | Closure $condition = true): static
-    {
-        $this->isFavorite = $condition;
-
-        return $this;
-    }
-
     /**
-     * @param array<string, mixed> | Closure | null $tableFilters
+     * @param  array<string, mixed> | Closure | null  $tableFilters
      * @return $this
      */
     public function tableFilters(array | Closure | null $tableFilters = null): static
@@ -172,7 +164,7 @@ class TableView extends Component
     }
 
     /**
-     * @param  array<string, mixed> | Closure $tableColumnSearches
+     * @param  array<string, mixed> | Closure  $tableColumnSearches
      * @return $this
      */
     public function tableColumnSearches(array | Closure $tableColumnSearches = []): static
@@ -183,7 +175,7 @@ class TableView extends Component
     }
 
     /**
-     * @param  array<string, mixed> | Closure $columns
+     * @param  array<string, mixed> | Closure  $columns
      * @return $this
      */
     public function toggledTableColumns(array | Closure $columns = []): static
@@ -194,7 +186,7 @@ class TableView extends Component
     }
 
     /**
-     * @param  list<string> | Closure $columns
+     * @param  list<string> | Closure  $columns
      * @return $this
      */
     public function visibleTableColumns(array | Closure $columns = []): static
@@ -205,7 +197,7 @@ class TableView extends Component
     }
 
     /**
-     * @param  list<string> | Closure $columns
+     * @param  list<string> | Closure  $columns
      * @return $this
      */
     public function hiddenTableColumns(array | Closure $columns = []): static
@@ -227,15 +219,27 @@ class TableView extends Component
         return $this->evaluate($this->label);
     }
 
+    public function getIcon(): string | Htmlable | null
+    {
+        $icon = $this->evaluate($this->icon);
+
+        // https://github.com/filamentphp/filament/pull/13512
+        if ($icon instanceof Renderable) {
+            return new HtmlString($icon->render());
+        }
+
+        return $icon;
+    }
+
     public function getTooltip(): ?string
     {
         return $this->evaluate($this->tooltip);
     }
 
     /**
-     * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | null
+     * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string}
      */
-    public function getColor(): string | array | null
+    public function getColor(): string | array
     {
         return $this->evaluate($this->color) ?? 'primary';
     }
@@ -257,20 +261,10 @@ class TableView extends Component
         $identifier = $this->evaluate($this->identifier) ?? $this->getLabel();
 
         if (! $identifier) {
-            throw new Exception('A table view must have an identifier to distinguish it from other table views.');
+            throw new Exception('A table view must have an unique identifier set to distinguish it from other table views.');
         }
 
         return (string) $identifier;
-    }
-
-    public function isPublic(): bool
-    {
-        return (bool) $this->evaluate($this->isPublic);
-    }
-
-    public function isFavorite(): bool
-    {
-        return (bool) $this->evaluate($this->isFavorite);
     }
 
     public function getTableViewState(): TableViewState

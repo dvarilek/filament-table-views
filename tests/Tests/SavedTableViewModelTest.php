@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-use Dvarilek\FilamentTableViews\Components\Table\TableView;
+use Dvarilek\FilamentTableViews\Components\UserView;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
+use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Dvarilek\FilamentTableViews\Tests\Models\Order;
 use Dvarilek\FilamentTableViews\Tests\Models\User;
 use Dvarilek\FilamentTableViews\Tests\Tests\Fixtures\LivewirePropertyFixture;
-
+use Filament\Tables\Contracts\HasTable;
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {
@@ -15,15 +16,15 @@ beforeEach(function () {
 });
 
 it('stores DTO as JSON in the database', function () {
-    /* @var \Filament\Tables\Contracts\HasTable $livewire */
+    /* @var HasTable $livewire */
     $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $state = TableViewState::fromLivewire($livewire);
 
-    /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
+    /* @var User $user */
     $user = auth()->user();
 
-    /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $tableView */
+    /* @var SavedTableView $tableView */
     $tableView = $user->tableViews()->create([
         'name' => 'Test View',
         'model_type' => Order::class,
@@ -60,15 +61,15 @@ it('stores DTO as JSON in the database', function () {
 });
 
 it('casts stored JSON back to DTO', function () {
-    /* @var \Filament\Tables\Contracts\HasTable $livewire */
+    /* @var HasTable $livewire */
     $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $originalState = TableViewState::fromLivewire($livewire);
 
-    /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
+    /* @var User $user */
     $user = auth()->user();
 
-    /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $tableView */
+    /* @var SavedTableView $tableView */
     $tableView = $user->tableViews()->create([
         'name' => 'Test View',
         'model_type' => Order::class,
@@ -89,12 +90,12 @@ it('casts stored JSON back to DTO', function () {
 });
 
 test('table view model can be converted into table view', function () {
-    /* @var \Illuminate\Contracts\Auth\Authenticatable|null $user */
+    /* @var User $user */
     $user = auth()->user();
 
-    $viewState = new TableViewState();
+    $viewState = new TableViewState;
 
-    /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $model */
+    /* @var SavedTableView $model */
     $model = $user->tableViews()->create([
         'name' => 'Test View',
         'icon' => 'heroicon-o-user',
@@ -105,34 +106,15 @@ test('table view model can be converted into table view', function () {
         'view_state' => $viewState,
     ]);
 
-    $tableView = $model->toTableView();
+    $tableView = UserView::make($model);
 
     expect($tableView)
-        ->toBeInstanceOf(TableView::class)
+        ->toBeInstanceOf(UserView::class)
         ->getLabel()->toBe($model->name)
         ->getIcon()->toBe($model->icon)
         ->getColor()->toBe($model->color)
         ->getIdentifier()->toBe((string) $model->getKey())
         ->isPublic()->toBe($model->is_public)
         ->isFavorite()->toBe($model->is_favorite)
-        ->tableFilters($viewState->tableFilters)
-        ->tableSort($viewState->tableSortColumn, $viewState->tableSortDirection)
-        ->tableGrouping($viewState->tableGrouping, $viewState->tableGroupingDirection)
-        ->tableSearch($viewState->tableSearch)
-        ->tableColumnSearches($viewState->tableColumnSearches)
-        ->toggledTableColumns($viewState->toggledTableColumns)
-        ->activeTab($viewState->activeTab)
-        ->hasModifyQueryUsing()->toBeFalse()
-        ->and($tableView->getTableViewState())
-        ->toBeInstanceOf(TableViewState::class)
-        ->tableFilters->toBe($viewState->tableFilters)
-        ->tableSortColumn->toBe($viewState->tableSortColumn)
-        ->tableSortDirection->toBe($viewState->tableSortDirection)
-        ->tableGrouping->toBe($viewState->tableGrouping)
-        ->tableGroupingDirection->toBe($viewState->tableGroupingDirection)
-        ->tableSearch->toBe($viewState->tableSearch)
-        ->tableColumnSearches->toBe($viewState->tableColumnSearches)
-        ->toggledTableColumns->toBe($viewState->toggledTableColumns)
-        ->activeTab->toBe($viewState->activeTab);
+        ->getTableViewState()->toBe($viewState);
 });
-

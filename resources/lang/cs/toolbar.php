@@ -68,7 +68,7 @@ return [
 
                 'personal' => 'Osobní',
 
-                'default' => 'Defaultní'
+                'default' => 'Defaultní',
 
             ],
 
@@ -80,7 +80,7 @@ return [
 
                 'personal' => 'Osobní',
 
-                'default' => 'Defaultní'
+                'default' => 'Defaultní',
 
             ],
 
@@ -88,8 +88,8 @@ return [
 
                 'search_empty_state' => 'Nenalezeny žádné odpovídající pohledy',
 
-                'no_views_empty_state' => 'Nejsou k dispozici žádné pohledy'
-            ]
+                'no_views_empty_state' => 'Nejsou k dispozici žádné pohledy',
+            ],
 
         ],
 

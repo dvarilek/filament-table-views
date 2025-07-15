@@ -1,6 +1,6 @@
 @props([
-    'tableView',
     'key',
+    'tableView',
     'isActive' => false
 ])
 
@@ -27,7 +27,8 @@
                 'tabindex' => '-1'
             ], false)
             ->class([
-                 'fi-table-views-view-item  p-1 disabled:opacity-70'
+                 'fi-table-views-view-item p-1 disabled:opacity-70',
+                 'rounded-t-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 relative' => $isActive
             ])
             // TODO: Handle the border using tailwind, couldn't get it to work
             ->style([
@@ -36,8 +37,6 @@
                     shades: [600],
                     alias: 'tableView',
                 ),
-                'border-bottom-color: rgb(var(--c-600)); border-bottom-width: 2px;' => $isActive,
-                'border-bottom-color: transparent; border-bottom-width: 2px;' => ! $isActive,
             ])
     }}
 >

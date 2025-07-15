@@ -14,7 +14,10 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 
-class TableViewAction extends Action
+/**
+ * @mixin Action
+ */
+trait HasTableViewFormComponents
 {
     protected ?Closure $modifyNameFormComponentUsing = null;
 
@@ -29,7 +32,7 @@ class TableViewAction extends Action
     protected ?Closure $modifyDescriptionFormComponentUsing = null;
 
     /**
-     * @var array<string, \Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
+     * @var array<string, Field | Component>
      */
     protected array $extraFormComponents = [];
 
@@ -83,7 +86,7 @@ class TableViewAction extends Action
     }
 
     /**
-     * @return list<\Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
+     * @return list<Field | Component>
      */
     public function getFormComponents(): array
     {
@@ -113,7 +116,7 @@ class TableViewAction extends Action
     }
 
     /**
-     * @return list<\Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
+     * @return list<Field | Component>
      */
     public function getDefaultFormComponents(): array
     {
@@ -214,8 +217,6 @@ class TableViewAction extends Action
 
         return $component;
     }
-
-
 
     public function getDescriptionFormComponent(): ?Field
     {

@@ -27,7 +27,7 @@ abstract class TestCase extends OrchestraTestCase
         $this->loadLaravelMigrations();
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
 
-        (require __DIR__ . '/../database/migrations/create_user_table_views_table.php')->up();
+        (require __DIR__ . '/../database/migrations/create_saved_table_views_table.php')->up();
     }
 
     /**

@@ -62,7 +62,7 @@ final readonly class TableViewState implements Arrayable, Castable
             public function get(Model $model, string $key, mixed $value, array $attributes): TableViewState
             {
                 if ($value === null) {
-                    return new TableViewState();
+                    return new TableViewState;
                 }
 
                 $data = json_decode($value, true, JSON_THROW_ON_ERROR);

@@ -5,9 +5,8 @@
 
 @props([
     'livewireId',
-    'customTableViews',
     'defaultTableViews',
-    'customTableViewActions',
+    'userTableViews',
     'activeTableViewKey',
     'tableViewManagerSearch',
     'tableViewManagerSearchDebounce' => '500ms',
@@ -15,41 +14,42 @@
     'tableViewManagerSearchLabel',
     'tableViewManagerSearchPlaceholder',
     'tableViewManagerActiveFilters',
-    'tableViewManagerActions'
+    'tableViewManagerDefaultActions',
+    'tableViewManagerUserActions',
 ])
 
 @php
     $tableViewManagerSearchWireModelAttribute = $tableViewManagerSearchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$tableViewManagerSearchDebounce}";
 
-    $favoriteCustomTableViews = [];
-    $publicCustomTableViews = [];
-    $personalCustomTableViews = [];
+    $favoriteUserTableViews = [];
+    $publicUserTableViews = [];
+    $personalUserTableViews = [];
 
-    foreach ($customTableViews as $key => $tableView) {
+    foreach ($userTableViews as $key => $tableView) {
         if ($tableView->isFavorite()) {
-            $favoriteCustomTableViews[$key] = $tableView;
+            $favoriteUserTableViews[$key] = $tableView;
         } elseif ($tableView->isPublic()) {
-            $publicCustomTableViews[$key] = $tableView;
+            $publicUserTableViews[$key] = $tableView;
         } else {
-            $personalCustomTableViews[$key] = $tableView;
+            $personalUserTableViews[$key] = $tableView;
         }
     }
 
-    $hasDefaultCustomTableViews = filled($defaultTableViews);
+    $hasDefaultUserTableViews = filled($defaultTableViews);
     $hasDefaultTableViewsFilterActive = $tableViewManagerActiveFilters['default'];
-    $canRenderDefaultTableViews = $hasDefaultCustomTableViews && $hasDefaultTableViewsFilterActive;
+    $canRenderDefaultTableViews = $hasDefaultUserTableViews && $hasDefaultTableViewsFilterActive;
 
-    $hasFavoriteCustomTableViews = filled($favoriteCustomTableViews);
+    $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
     $hasFavoriteTableViewsFilterActive = $tableViewManagerActiveFilters['favorite'];
-    $canRenderFavoriteCustomTableViews = $hasFavoriteCustomTableViews && $hasFavoriteTableViewsFilterActive;
+    $canRenderFavoriteUserTableViews = $hasFavoriteUserTableViews && $hasFavoriteTableViewsFilterActive;
 
-    $hasPublicCustomTableViews = filled($publicCustomTableViews);
+    $hasPublicUserTableViews = filled($publicUserTableViews);
     $hasPublicTableViewsFilterActive = $tableViewManagerActiveFilters['public'];
-    $canRenderPublicCustomTableViews = $hasPublicCustomTableViews && $hasPublicTableViewsFilterActive;
+    $canRenderPublicUserTableViews = $hasPublicUserTableViews && $hasPublicTableViewsFilterActive;
 
-    $hasPersonalCustomTableViews = filled($personalCustomTableViews);
+    $hasPersonalUserTableViews = filled($personalUserTableViews);
     $hasPersonalTableViewsFilterActive = $tableViewManagerActiveFilters['personal'];
-    $canRenderPersonalCustomTableViews = $hasPersonalCustomTableViews && $hasPersonalTableViewsFilterActive;
+    $canRenderPersonalUserTableViews = $hasPersonalUserTableViews && $hasPersonalTableViewsFilterActive;
 @endphp
 
 <div class="flex flex-1 flex-col p-6 space-y-6">
@@ -126,15 +126,15 @@
                 class="relative cursor-pointer select-none"
                 wire:loading.attr="disabled"
                 wire:click="toggleViewManagerFilterButton('default')"
-                :disabled="! $hasDefaultCustomTableViews"
+                :disabled="! $hasDefaultUserTableViews"
                 :color="$canRenderDefaultTableViews ? 'primary' : 'gray'"
             >
                 @lang('filament-table-views::toolbar.actions.manage-table-views.filters.default')
 
                 @if ($defaultCount = count($defaultTableViews))
                     <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
-                    {{ $defaultCount > 99 ? '99+' : $defaultCount }}
-                </span>
+                        {{ $defaultCount > 99 ? '99+' : $defaultCount }}
+                    </span>
                 @endif
             </x-filament::badge>
 
@@ -144,15 +144,15 @@
                     class="relative cursor-pointer select-none"
                     wire:loading.attr="disabled"
                     wire:click="toggleViewManagerFilterButton('favorite')"
-                    :disabled="! $hasFavoriteCustomTableViews"
-                    :color="$canRenderFavoriteCustomTableViews ? 'primary' : 'gray'"
+                    :disabled="! $hasFavoriteUserTableViews"
+                    :color="$canRenderFavoriteUserTableViews ? 'primary' : 'gray'"
                 >
                     @lang('filament-table-views::toolbar.actions.manage-table-views.filters.favorite')
 
-                    @if ($favoriteCount = count($favoriteCustomTableViews))
+                    @if ($favoriteCount = count($favoriteUserTableViews))
                         <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
-                        {{ $favoriteCount > 99 ? '99+' : $favoriteCount }}
-                    </span>
+                            {{ $favoriteCount > 99 ? '99+' : $favoriteCount }}
+                        </span>
                     @endif
                 </x-filament::badge>
 
@@ -161,15 +161,15 @@
                     class="relative cursor-pointer select-none"
                     wire:loading.attr="disabled"
                     wire:click="toggleViewManagerFilterButton('public')"
-                    :disabled="! $hasPublicCustomTableViews"
-                    :color="$canRenderPublicCustomTableViews ? 'primary' : 'gray'"
+                    :disabled="! $hasPublicUserTableViews"
+                    :color="$canRenderPublicUserTableViews ? 'primary' : 'gray'"
                 >
                     @lang('filament-table-views::toolbar.actions.manage-table-views.filters.public')
 
-                    @if ($publicCount = count($publicCustomTableViews))
+                    @if ($publicCount = count($publicUserTableViews))
                         <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
-                        {{ $publicCount > 99 ? '99+' : $publicCount }}
-                    </span>
+                            {{ $publicCount > 99 ? '99+' : $publicCount }}
+                        </span>
                     @endif
                 </x-filament::badge>
 
@@ -178,77 +178,77 @@
                     class="relative cursor-pointer select-none"
                     wire:loading.attr="disabled"
                     wire:click="toggleViewManagerFilterButton('personal')"
-                    :disabled="! $hasPersonalCustomTableViews"
-                    :color="$canRenderPersonalCustomTableViews ? 'primary' : 'gray'"
+                    :disabled="! $hasPersonalUserTableViews"
+                    :color="$canRenderPersonalUserTableViews ? 'primary' : 'gray'"
                 >
                     @lang('filament-table-views::toolbar.actions.manage-table-views.filters.personal')
 
-                    @if ($personalCount = count($personalCustomTableViews))
+                    @if ($personalCount = count($personalUserTableViews))
                         <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
-                        {{ $personalCount > 99 ? '99+' : $personalCount }}
-                    </span>
+                            {{ $personalCount > 99 ? '99+' : $personalCount }}
+                        </span>
                     @endif
                 </x-filament::badge>
             </div>
         </div>
     </div>
 
-    @if ($canRenderFavoriteCustomTableViews || $canRenderPublicCustomTableViews || $canRenderPersonalCustomTableViews || $canRenderDefaultTableViews)
+    @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPersonalUserTableViews || $canRenderDefaultTableViews)
         <div class="space-y-6 overflow-y-auto" style="max-height: 400px">
-            @if ($canRenderFavoriteCustomTableViews)
+            @if ($canRenderFavoriteUserTableViews)
                 <div class="space-y-2">
                     <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                         @lang('filament-table-views::toolbar.actions.manage-table-views.sections.favorite')
                     </h5>
 
                     <div class="space-y-1">
-                        @foreach($favoriteCustomTableViews as $key => $tableView)
+                        @foreach($favoriteUserTableViews as $key => $tableView)
                             <x-filament-table-views::manager.table-view-item
-                                :wire-key="'filament-table-views-manager-favorite-custom-view-' . $key . '-' . $livewireId"
-                                :tableView="$tableView"
+                                :wire-key="'filament-table-views-manager-favorite-user-view-' . $key . '-' . $livewireId"
                                 :key="$key"
+                                :tableView="$tableView"
                                 :isActive="$activeTableViewKey === (string) $key"
-                                :actions="$tableViewManagerActions"
+                                :actions="$tableViewManagerDefaultActions"
                             />
                         @endforeach
                     </div>
                 </div>
             @endif
 
-            @if ($canRenderPersonalCustomTableViews)
+            @if ($canRenderPersonalUserTableViews)
                 <div class="space-y-2">
                     <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                         @lang('filament-table-views::toolbar.actions.manage-table-views.sections.personal')
                     </h5>
 
                     <div class="space-y-1">
-                        @foreach($personalCustomTableViews as $key => $tableView)
+                        @foreach($personalUserTableViews as $key => $tableView)
                             <x-filament-table-views::manager.table-view-item
-                                :wire-key="'filament-table-views-manager-personal-custom-view-' . $key . '-' . $livewireId"
-                                :tableView="$tableView"
+                                :wire-key="'filament-table-views-manager-personal-user-view-' . $key . '-' . $livewireId"
                                 :key="$key"
+                                :tableView="$tableView"
                                 :isActive="$activeTableViewKey === (string) $key"
-                                :actions="$tableViewManagerActions"
+                                :actions="$tableViewManagerDefaultActions"
                             />
                         @endforeach
                     </div>
                 </div>
             @endif
 
-            @if ($canRenderPublicCustomTableViews)
+            @if ($canRenderPublicUserTableViews)
                 <div class="space-y-2">
                     <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                         @lang('filament-table-views::toolbar.actions.manage-table-views.sections.public')
                     </h5>
 
                     <div class="space-y-1">
-                        @foreach($publicCustomTableViews as $key => $tableView)
+                        @foreach($publicUserTableViews as $key => $tableView)
                             <x-filament-table-views::manager.table-view-item
-                                :wire-key="'filament-table-views-manager-public-custom-view-' . $key . '-' . $livewireId"
-                                :tableView="$tableView"
+                                :wire-key="'filament-table-views-manager-public-user-view-' . $key . '-' . $livewireId"
                                 :key="$key"
+                                :tableView="$tableView"
                                 :isActive="$activeTableViewKey === (string) $key"
-                                :actions="$tableViewManagerActions"
+                                :actions="$tableViewManagerUserActions"
                             />
                         @endforeach
                     </div>
@@ -265,10 +265,10 @@
                         @foreach($defaultTableViews as $key => $tableView)
                             <x-filament-table-views::manager.table-view-item
                                 :wire-key="'filament-table-views-manager-default-view-' . $key . '-' . $livewireId"
-                                :tableView="$tableView"
                                 :key="$key"
+                                :tableView="$tableView"
                                 :isActive="$activeTableViewKey === (string) $key"
-                                :actions="$tableViewManagerActions"
+                                :actions="$tableViewManagerDefaultActions"
                             />
                         @endforeach
                     </div>

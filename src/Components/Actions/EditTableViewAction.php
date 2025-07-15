@@ -5,24 +5,22 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Actions;
 
 use Closure;
-use Dvarilek\FilamentTableViews\Contracts\HasTableViewOwnership;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
-use Exception;
+use Dvarilek\FilamentTableViews\Models\SavedTableView;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Toggle;
-use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
-use Dvarilek\FilamentTableViews\Models\CustomTableView;
 
-class EditTableViewAction extends TableViewAction
+class EditTableViewAction extends EditAction
 {
-    protected ?Closure $modifyShouldUpdateViewFormComponentUsing = null;
+    use HasTableViewFormComponents {
+        getDefaultFormComponents as baseGetDefaultFormComponents;
+    }
 
-    /**
-     * @var Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification | null
-     */
-    protected ?Closure $modifyAfterTableViewUpdatedNotificationUsing = null;
+    protected ?Closure $modifyShouldUpdateViewFormComponentUsing = null;
 
     public static function getDefaultName(): ?string
     {
@@ -37,7 +35,9 @@ class EditTableViewAction extends TableViewAction
 
         $this->modalSubmitActionLabel(__('filament-table-views::toolbar.actions.edit-table-view.submit_label'));
 
-        $this->icon('heroicon-o-pencil');
+        $this->successNotificationTitle(__('filament-table-views::toolbar.actions.edit-table-view.notifications.after_table_view_updated.title'));
+
+        $this->icon('heroicon-m-pencil');
 
         $this->color('primary');
 
@@ -47,44 +47,24 @@ class EditTableViewAction extends TableViewAction
 
         $this->form(static fn (EditTableViewAction $action) => $action->getFormComponents());
 
-        $this->action(static function (EditTableViewAction $action, HasTable $livewire, array $data): void {
-            $tableViewModelType = $action->getModel();
+        $this->action(function (): void {
+            $this->process(static function (EditTableViewAction $action, HasTable $livewire, SavedTableView $record, array $data): void {
+                if ($data['should_update_view'] ?? null) {
+                    $data['view_state'] = TableViewState::fromLivewire($livewire);
+                }
 
-            if (! $tableViewModelType) {
-                throw new Exception('The CreateViewAction must have a table view model type set.');
-            }
+                unset($data['should_update_view']);
 
-            /* @var \Illuminate\Contracts\Auth\Authenticatable | null $user */
-            $user = auth()->user();
+                if ($translatableContentDriver = $livewire->makeFilamentTranslatableContentDriver()) {
+                    $translatableContentDriver->updateRecord($record, $data);
+                } else {
+                    $record->update($data);
+                }
+            });
 
-            if (! $user) {
-                throw new Exception('Cannot edit TableView, user not found.');
-            }
-
-            if (! is_subclass_of($user::class, HasTableViewOwnership::class)) {
-                throw new Exception('User class ' . $user::class . ' must implement ' . HasTableViewOwnership::class);
-            }
-
-            if ($data['should_update_view'] ?? null) {
-                $data['view_state'] = TableViewState::fromLivewire($livewire);
-            }
-
-            unset($data['should_update_view']);
-
-            /* @var \Dvarilek\FilamentTableViews\Models\CustomTableView $tableView */
-            $tableView = $user->tableViews()->create([
-                ...$data,
-                'model_type' => $tableViewModelType,
-            ]);
-
-            $notification = $action->getAfterTableViewUpdatedNotification();
-
-            if ($action->modifyAfterTableViewUpdatedNotificationUsing) {
-                $notification = ($action->modifyAfterTableViewUpdatedNotificationUsing)($notification, $tableView);
-            }
-
-            $notification->send();
+            $this->success();
         });
+
     }
 
     public function shouldUpdateFormComponent(Closure $callback): static
@@ -95,30 +75,12 @@ class EditTableViewAction extends TableViewAction
     }
 
     /**
-     * @param  Closure(\Filament\Notifications\Notification, \Dvarilek\FilamentTableViews\Models\CustomTableView): \Filament\Notifications\Notification  $callback
-     * @return $this
-     */
-    public function afterTableViewUpdatedNotification(Closure $callback): static
-    {
-        $this->modifyAfterTableViewUpdatedNotificationUsing = $callback;
-
-        return $this;
-    }
-
-    public function getAfterTableViewUpdatedNotification(): Notification
-    {
-        return Notification::make('filament-table-views::after_table_view_updated-notification')
-            ->title(__('filament-table-views::toolbar.actions.edit-table-view.notifications.after_table_view_updated.title'))
-            ->success();
-    }
-
-    /**
-     * @return list<\Filament\Forms\Components\Field | \Filament\Forms\Components\Component>
+     * @return list<Field | Component>
      */
     public function getDefaultFormComponents(): array
     {
         return [
-            ...parent::getDefaultFormComponents(),
+            ...$this->baseGetDefaultFormComponents(),
             $this->getShouldUpdateViewFormComponent(),
         ];
     }

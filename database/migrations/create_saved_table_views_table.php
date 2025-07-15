@@ -10,14 +10,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'), function (Blueprint $table) {
+        Schema::create(('saved_table_views'), function (Blueprint $table) {
             $table->id();
 
             $table->string('name', 64);
             $table->text('description')->nullable()->default(null);
             $table->string('icon', 255)->nullable()->default(null);
 
-            config('filament-table-views.custom_table_view_model.color_attribute_is_json', false)
+            config('filament-table-views.saved_table_view_model.color_attribute_is_json', false)
                 ? $table->json('color')->nullable()->default(null)
                 : $table->string('color', 255)->nullable()->default(null);
 
@@ -35,6 +35,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('filament-table-views.custom_table_view_model.table', 'custom_table_views'));
+        Schema::dropIfExists('saved_table_views');
     }
 };

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Tests\Tests\Fixtures\LivewirePropertyFixture;
+use Filament\Tables\Contracts\HasTable;
 
 use function Pest\Livewire\livewire;
 
 it('can create a DTO from livewire', function () {
-    /* @var \Filament\Tables\Contracts\HasTable $livewire */
+    /* @var HasTable $livewire */
     $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $state = TableViewState::fromLivewire($livewire);
@@ -38,7 +39,7 @@ it('can create a DTO from livewire', function () {
 });
 
 it('can create a DTO from livewire with null values', function (string $property) {
-    /* @var \Filament\Tables\Contracts\HasTable $livewire */
+    /* @var HasTable $livewire */
     $livewire = livewire(LivewirePropertyFixture::class)->instance();
     $livewire->$property = in_array($property, ['tableColumnSearches', 'toggledTableColumns']) ? [] : null;
 
@@ -59,7 +60,7 @@ it('can create a DTO from livewire with null values', function (string $property
 ]);
 
 it('can survive JSON encoding and decoding', function () {
-    /* @var \Filament\Tables\Contracts\HasTable $livewire */
+    /* @var HasTable $livewire */
     $livewire = livewire(LivewirePropertyFixture::class)->instance();
 
     $originalState = TableViewState::fromLivewire($livewire);
