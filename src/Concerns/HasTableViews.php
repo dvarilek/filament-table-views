@@ -10,8 +10,8 @@ use Dvarilek\FilamentTableViews\Components\Actions\DeleteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\ToggleFavoriteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\TogglePublicTableViewAction;
-use Dvarilek\FilamentTableViews\Components\DefaultView;
-use Dvarilek\FilamentTableViews\Components\TableViewContract;
+use Dvarilek\FilamentTableViews\Components\TableView;
+use Dvarilek\FilamentTableViews\Components\BaseTableView;
 use Dvarilek\FilamentTableViews\Components\UserView;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Filament\Actions\Action;
@@ -48,10 +48,10 @@ trait HasTableViews
      */
     public array $originalToggledTableColumns = [];
 
-    protected ?TableViewContract $cachedActiveTableView = null;
+    protected ?BaseTableView $cachedActiveTableView = null;
 
     /**
-     * @return array<string, DefaultView>
+     * @return array<string, TableView>
      */
     public function getTableViews(): array
     {
@@ -185,13 +185,13 @@ trait HasTableViews
     }
 
     /**
-     * @param  array<mixed, TableViewContract>  $tableViews
-     * @return array<mixed, TableViewContract>
+     * @param  array<mixed, BaseTableView>  $tableViews
+     * @return array<mixed, BaseTableView>
      */
     public function filterTableViewManagerItems(array $tableViews): array // TODO: Refactor
     {
         return collect($tableViews)
-            ->filter(fn (TableViewContract $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
+            ->filter(fn (BaseTableView $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
             ->toArray();
     }
 
@@ -274,12 +274,12 @@ trait HasTableViews
     }
 
     /**
-     * @return array<string, DefaultView>
+     * @return array<string, TableView>
      */
     public function getDefaultTableViews(): array
     {
         return collect($this->getTableViews())
-            ->mapWithKeys(static function (DefaultView $tableView) {
+            ->mapWithKeys(static function (TableView $tableView) {
                 $key = $tableView->getLabel();
 
                 return [
@@ -312,7 +312,7 @@ trait HasTableViews
             ->toArray();
     }
 
-    protected function getActiveTableView(): ?TableViewContract
+    protected function getActiveTableView(): ?BaseTableView
     {
         if ($this->cachedActiveTableView) {
             return $this->cachedActiveTableView;
@@ -327,7 +327,7 @@ trait HasTableViews
             /* @phpstan-ignore-next-line */
             ...$this->userTableViews,
         ])
-            ->first(fn (TableViewContract $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
+            ->first(fn (BaseTableView $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
 
         return $this->cachedActiveTableView = $activeTableView;
     }
@@ -400,7 +400,7 @@ trait HasTableViews
         $this->updatedActiveTableView();
     }
 
-    protected function loadStateFromTableView(TableViewContract $tableView): void
+    protected function loadStateFromTableView(BaseTableView $tableView): void
     {
         $viewState = $tableView->getTableViewState();
 
@@ -523,7 +523,7 @@ trait HasTableViews
     {
         $activeTableView = $this->getActiveTableView();
 
-        if (! ($activeTableView instanceof DefaultView)) {
+        if (! ($activeTableView instanceof TableView)) {
             return;
         }
 
