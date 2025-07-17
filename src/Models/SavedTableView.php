@@ -43,6 +43,9 @@ class SavedTableView extends Model
         'view_state',
     ];
 
+    /**
+     * @var array<string, mixed>
+     */
     protected $casts = [
         'is_public' => 'boolean',
         'is_favorite' => 'boolean',
@@ -74,5 +77,15 @@ class SavedTableView extends Model
     public function isFavorite(): bool
     {
         return $this->is_favorite;
+    }
+
+    public function togglePublic(): void
+    {
+        $this->update(['is_public' => !$this->is_public]);
+    }
+
+    public function toggleFavorite(): void
+    {
+        $this->update(['is_favorite' => ! ($this->is_favorite)]);
     }
 }

@@ -66,7 +66,7 @@ return [
 
                 'public' => 'Public',
 
-                'personal' => 'Personal',
+                'private' => 'Private',
 
                 'default' => 'Default',
 
@@ -78,7 +78,7 @@ return [
 
                 'public' => 'Public',
 
-                'personal' => 'Personal',
+                'private' => 'Private',
 
                 'default' => 'Default',
 
@@ -93,7 +93,7 @@ return [
             ],
 
         ],
-
+        
         'edit-table-view' => [
 
             'label' => 'Edit view',
@@ -117,6 +117,28 @@ return [
             ],
 
         ],
+
+        'toggle-public-table-view' => [
+
+            'make_private_label' => 'Make private',
+
+            'make_public_label' => 'Make public',
+
+        ],
+
+        'toggle-favorite-table-view' => [
+
+            'remove_favorite_label' => 'Remove favorite',
+
+            'make_favorite_label' => 'Make favorite',
+
+        ],
+        
+        'delete-table-view' => [
+            
+            'label' => 'Delete view',
+            
+        ]
 
     ],
 

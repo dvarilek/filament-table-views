@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Components\Actions;
 
+use Dvarilek\FilamentTableViews\Components\Actions\Concerns\HasTableViewFormComponents;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Exception;
@@ -70,6 +71,8 @@ class CreateTableViewAction extends Action
                     'view_state' => TableViewState::fromLivewire($livewire),
                 ]);
             });
+
+            unset($this->userTableViews);
 
             /** @phpstan-ignore-next-line */
             $livewire->toggleActiveTableView((string) $record->getKey());

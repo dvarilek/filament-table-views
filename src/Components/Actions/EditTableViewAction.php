@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Actions;
 
 use Closure;
+use Dvarilek\FilamentTableViews\Components\Actions\Concerns\HasTableViewFormComponents;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Filament\Actions\EditAction;
@@ -60,6 +61,8 @@ class EditTableViewAction extends EditAction
                 } else {
                     $record->update($data);
                 }
+
+                unset($livewire->userTableViews);
             });
 
             $this->success();

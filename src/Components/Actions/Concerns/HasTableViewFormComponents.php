@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dvarilek\FilamentTableViews\Components\Actions;
+namespace Dvarilek\FilamentTableViews\Components\Actions\Concerns;
 
 use Closure;
 use Filament\Actions\Action;
@@ -86,7 +86,7 @@ trait HasTableViewFormComponents
     }
 
     /**
-     * @return list<Field | Component>
+     * @return Field
      */
     public function getFormComponents(): array
     {
@@ -116,7 +116,7 @@ trait HasTableViewFormComponents
     }
 
     /**
-     * @return list<Field | Component>
+     * @return Field
      */
     public function getDefaultFormComponents(): array
     {
