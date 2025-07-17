@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-use Dvarilek\FilamentTableViews\Components\UserView;
+use Dvarilek\FilamentTableViews\Components\TableView\UserView;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Dvarilek\FilamentTableViews\Tests\Models\Order;
 use Dvarilek\FilamentTableViews\Tests\Models\User;
 use Dvarilek\FilamentTableViews\Tests\Tests\Fixtures\LivewirePropertyFixture;
 use Filament\Tables\Contracts\HasTable;
+
 use function Pest\Livewire\livewire;
 
 beforeEach(function () {

@@ -31,7 +31,7 @@
     'defaultActions',
     'userActions',
     'isCollapsible',
-    'isReorderable'
+    'isReorderable',
 ])
 
 @php
@@ -49,9 +49,11 @@
 @endphp
 
 <div class="flex flex-1 flex-col">
-    <div class="flex flex-1 flex-col px-6 pt-6 space-y-4">
+    <div class="flex flex-1 flex-col space-y-4 px-6 pb-6 pt-6">
         <div class="flex justify-between">
-            <h4 class="text-base font-semibold leading-6 text-gray-950 dark:text-white">
+            <h4
+                class="text-base font-semibold leading-6 text-gray-950 dark:text-white"
+            >
                 {{ $heading }}
             </h4>
 
@@ -60,7 +62,7 @@
                     <x-filament::link
                         :attributes="
                             \Filament\Support\prepare_inherited_attributes(
-                                new \Illuminate\View\ComponentAttributeBag([
+                                new Illuminate\View\ComponentAttributeBag([
                                     'color' => 'danger',
                                     'tag' => 'button',
                                     'wire:click' => 'resetTableViewManager',
@@ -76,7 +78,7 @@
                     <x-filament::loading-indicator
                         :attributes="
                             \Filament\Support\prepare_inherited_attributes(
-                                new \Illuminate\View\ComponentAttributeBag([
+                                new Illuminate\View\ComponentAttributeBag([
                                     'wire:loading.delay.' . config('filament.livewire_loading_delay', 'default') => '',
                                     'wire:target' => 'resetTableViewManager',
                                 ])
@@ -93,10 +95,7 @@
                 $searchWireModelAttribute = $searchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$searchDebounce}";
             @endphp
 
-            <div
-                x-id="['input']"
-                class="pt-1"
-            >
+            <div x-id="['input']" class="pt-1">
                 <label x-bind:for="$id('input')" class="sr-only">
                     {{ $searchLabel }}
                 </label>
@@ -130,7 +129,7 @@
                 <x-filament::badge
                     :attributes="
                         \Filament\Support\prepare_inherited_attributes(
-                            new \Illuminate\View\ComponentAttributeBag([
+                            new Illuminate\View\ComponentAttributeBag([
                                 'size' => 'sm',
                                 'wire:loading.attr' => 'disabled',
                                 'wire:click' => 'toggleViewManagerFilterButton(\'favorite\')',
@@ -139,15 +138,17 @@
                                 'icon' => $canRenderFavoriteUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
                             ])
                         )
-                        ->class([
-                            'relative cursor-pointer select-none'
-                        ])
+                            ->class([
+                                'relative cursor-pointer select-none',
+                            ])
                     "
                 >
                     {{ $favoriteFilterLabel }}
 
                     @if ($favoriteCount = count($favoriteUserTableViews))
-                        <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
+                        <span
+                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                        >
                             {{ $favoriteCount > 99 ? '99+' : $favoriteCount }}
                         </span>
                     @endif
@@ -156,7 +157,7 @@
                 <x-filament::badge
                     :attributes="
                         \Filament\Support\prepare_inherited_attributes(
-                            new \Illuminate\View\ComponentAttributeBag([
+                            new Illuminate\View\ComponentAttributeBag([
                                 'size' => 'sm',
                                 'wire:loading.attr' => 'disabled',
                                 'wire:click' => 'toggleViewManagerFilterButton(\'private\')',
@@ -165,15 +166,17 @@
                                 'icon' => $canRenderPrivateUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
                             ])
                         )
-                        ->class([
-                            'relative cursor-pointer select-none'
-                        ])
+                            ->class([
+                                'relative cursor-pointer select-none',
+                            ])
                     "
                 >
                     {{ $privateFilterLabel }}
 
                     @if ($privateCount = count($privateUserTableViews))
-                        <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
+                        <span
+                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                        >
                             {{ $privateCount > 99 ? '99+' : $privateCount }}
                         </span>
                     @endif
@@ -182,7 +185,7 @@
                 <x-filament::badge
                     :attributes="
                         \Filament\Support\prepare_inherited_attributes(
-                            new \Illuminate\View\ComponentAttributeBag([
+                            new Illuminate\View\ComponentAttributeBag([
                                 'size' => 'sm',
                                 'wire:loading.attr' => 'disabled',
                                 'wire:click' => 'toggleViewManagerFilterButton(\'public\')',
@@ -191,15 +194,17 @@
                                 'icon' => $canRenderPublicUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
                             ])
                         )
-                        ->class([
-                            'relative cursor-pointer select-none'
-                        ])
+                            ->class([
+                                'relative cursor-pointer select-none',
+                            ])
                     "
                 >
                     {{ $publicFilterLabel }}
 
                     @if ($publicCount = count($publicUserTableViews))
-                        <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
+                        <span
+                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                        >
                             {{ $publicCount > 99 ? '99+' : $publicCount }}
                         </span>
                     @endif
@@ -208,7 +213,7 @@
                 <x-filament::badge
                     :attributes="
                         \Filament\Support\prepare_inherited_attributes(
-                            new \Illuminate\View\ComponentAttributeBag([
+                            new Illuminate\View\ComponentAttributeBag([
                                 'size' => 'sm',
                                 'wire:loading.attr' => 'disabled',
                                 'wire:click' => 'toggleViewManagerFilterButton(\'default\')',
@@ -217,15 +222,17 @@
                                 'icon' => $canRenderDefaultTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
                             ])
                         )
-                        ->class([
-                            'relative cursor-pointer select-none'
-                        ])
+                            ->class([
+                                'relative cursor-pointer select-none',
+                            ])
                     "
                 >
                     {{ $defaultFilterLabel }}
 
                     @if ($defaultCount = count($defaultTableViews))
-                        <span class='absolute -top-1 -left-2 h-4 w-4 text-center pointer-events-none select-none'>
+                        <span
+                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                        >
                             {{ $defaultCount > 99 ? '99+' : $defaultCount }}
                         </span>
                     @endif
@@ -236,7 +243,7 @@
 
     @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPrivateUserTableViews || $canRenderDefaultTableViews)
         <div
-            class="space-y-6 overflow-y-auto p-6"
+            class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
             @if ($isCollapsible)
                 x-data="{
@@ -244,10 +251,7 @@
 
                     toggleCollapsedGroup: function (group) {
                         if (this.isGroupCollapsed(group)) {
-                            this.collapsedGroups.splice(
-                                this.collapsedGroups.indexOf(group),
-                                1,
-                            )
+                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
 
                             return
                         }
@@ -311,7 +315,7 @@
         </div>
     @else
         <div class="mx-auto grid max-w-lg justify-items-center text-center">
-            <div class="rounded-full bg-gray-100 p-3 dark:bg-gray-500/20 my-4">
+            <div class="my-4 rounded-full bg-gray-100 p-3 dark:bg-gray-500/20">
                 <x-filament::icon
                     icon="heroicon-m-x-mark"
                     class="h-6 w-6 text-gray-500 dark:text-gray-400"
@@ -319,7 +323,7 @@
             </div>
 
             @if ($emptyStatePlaceholder)
-                <h4 class="text-md font-normal leading-6 pb-6">
+                <h4 class="text-md pb-6 font-normal leading-6">
                     {{ $emptyStatePlaceholder }}
                 </h4>
             @endif

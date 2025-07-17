@@ -137,7 +137,7 @@ return [
 
             'label' => 'Odstranit pohled',
 
-        ]
+        ],
 
     ],
 

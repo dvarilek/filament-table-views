@@ -2,37 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Dvarilek\FilamentTableViews\Components;
+namespace Dvarilek\FilamentTableViews\Components\TableView;
 
 use Closure;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
-use Exception;
-use Filament\Support\Components\Component;
-use Filament\Support\Concerns\HasExtraAttributes;
-use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\HtmlString;
 
-class DefaultView extends Component implements TableViewContract
+class TableView extends BaseTableView
 {
-    use HasExtraAttributes;
-
-    protected string | Closure | null $label = null;
-
-    protected string | Closure | null $tooltip = null;
-
-    protected string | Htmlable | Closure | null $icon = null;
-
-    /**
-     * @var string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | Closure | null
-     */
-    protected string | array | Closure | null $color = null;
-
     protected ?Closure $modifyQueryUsing = null;
-
-    protected int | string | Closure | null $identifier = null;
 
     /**
      * @var array<string, mixed> | Closure | null
@@ -84,47 +63,9 @@ class DefaultView extends Component implements TableViewContract
         return $static;
     }
 
-    public function label(string | Closure | null $label): static
-    {
-        $this->label = $label;
-
-        return $this;
-    }
-
-    public function icon(string | Htmlable | Closure | null $icon): static
-    {
-        $this->icon = $icon;
-
-        return $this;
-    }
-
-    public function tooltip(string | Closure | null $tooltip): static
-    {
-        $this->tooltip = $tooltip;
-
-        return $this;
-    }
-
-    /**
-     * @param  string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | Closure | null  $color
-     */
-    public function color(string | array | Closure | null $color): static
-    {
-        $this->color = $color;
-
-        return $this;
-    }
-
     public function modifyQueryUsing(?Closure $callback): static
     {
         $this->modifyQueryUsing = $callback;
-
-        return $this;
-    }
-
-    public function identifier(int | string | Closure $value): static
-    {
-        $this->identifier = $value;
 
         return $this;
     }
@@ -214,36 +155,6 @@ class DefaultView extends Component implements TableViewContract
         return $this;
     }
 
-    public function getLabel(): ?string
-    {
-        return $this->evaluate($this->label);
-    }
-
-    public function getIcon(): string | Htmlable | null
-    {
-        $icon = $this->evaluate($this->icon);
-
-        // https://github.com/filamentphp/filament/pull/13512
-        if ($icon instanceof Renderable) {
-            return new HtmlString($icon->render());
-        }
-
-        return $icon;
-    }
-
-    public function getTooltip(): ?string
-    {
-        return $this->evaluate($this->tooltip);
-    }
-
-    /**
-     * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string}
-     */
-    public function getColor(): string | array
-    {
-        return $this->evaluate($this->color) ?? 'primary';
-    }
-
     public function modifyQuery(Builder $query): Builder
     {
         return $this->evaluate($this->modifyQueryUsing, [
@@ -254,17 +165,6 @@ class DefaultView extends Component implements TableViewContract
     public function hasModifyQueryUsing(): bool
     {
         return $this->modifyQueryUsing instanceof Closure;
-    }
-
-    public function getIdentifier(): string
-    {
-        $identifier = $this->evaluate($this->identifier) ?? $this->getLabel();
-
-        if (! $identifier) {
-            throw new Exception('A table view must have an unique identifier set to distinguish it from other table views.');
-        }
-
-        return (string) $identifier;
     }
 
     public function getTableViewState(): TableViewState

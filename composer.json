@@ -47,6 +47,10 @@
     }
   },
   "scripts": {
+    "cs": [
+      "pint",
+      "npm run prettier"
+    ],
     "test": "vendor/bin/pest",
     "pint": "pint --config pint-strict-imports.json",
     "stan": "vendor/bin/phpstan analyse src --level=6",

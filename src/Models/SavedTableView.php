@@ -81,7 +81,7 @@ class SavedTableView extends Model
 
     public function togglePublic(): void
     {
-        $this->update(['is_public' => !$this->is_public]);
+        $this->update(['is_public' => ! $this->is_public]);
     }
 
     public function toggleFavorite(): void

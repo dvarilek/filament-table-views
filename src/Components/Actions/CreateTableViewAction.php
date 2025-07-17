@@ -15,8 +15,8 @@ use Filament\Tables\Contracts\HasTable;
 
 class CreateTableViewAction extends Action
 {
-    use HasTableViewFormComponents;
     use CanCustomizeProcess;
+    use HasTableViewFormComponents;
 
     public static function getDefaultName(): ?string
     {

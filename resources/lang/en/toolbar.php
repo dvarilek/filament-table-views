@@ -93,7 +93,7 @@ return [
             ],
 
         ],
-        
+
         'edit-table-view' => [
 
             'label' => 'Edit view',
@@ -133,12 +133,12 @@ return [
             'make_favorite_label' => 'Make favorite',
 
         ],
-        
+
         'delete-table-view' => [
-            
+
             'label' => 'Delete view',
-            
-        ]
+
+        ],
 
     ],
 

@@ -19,9 +19,10 @@ class TogglePublicTableViewAction extends Action
     {
         parent::setUp();
 
-        $this->label(static fn (SavedTableView $record) => $record->isPublic()
-            ? __('filament-table-views::toolbar.actions.toggle-public-table-view.make_private_label')
-            : __('filament-table-views::toolbar.actions.toggle-public-table-view.make_public_label')
+        $this->label(
+            static fn (SavedTableView $record) => $record->isPublic() ?
+                __('filament-table-views::toolbar.actions.toggle-public-table-view.make_private_label') :
+                __('filament-table-views::toolbar.actions.toggle-public-table-view.make_public_label')
         );
 
         $this->icon(static fn (SavedTableView $record) => $record->isPublic() ? 'heroicon-o-eye-slash' : 'heroicon-o-eye');

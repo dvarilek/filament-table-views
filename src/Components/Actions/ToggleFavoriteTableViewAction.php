@@ -19,9 +19,10 @@ class ToggleFavoriteTableViewAction extends Action
     {
         parent::setUp();
 
-        $this->label(static fn (SavedTableView $record) => $record->isFavorite()
-            ? __('filament-table-views::toolbar.actions.toggle-favorite-table-view.remove_favorite_label')
-            : __('filament-table-views::toolbar.actions.toggle-favorite-table-view.make_favorite_label')
+        $this->label(
+            static fn (SavedTableView $record) => $record->isFavorite() ?
+                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.remove_favorite_label') :
+                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.make_favorite_label')
         );
 
         $this->icon(static fn (SavedTableView $record) => $record->isFavorite() ? 'heroicon-o-x-mark' : 'heroicon-o-heart');

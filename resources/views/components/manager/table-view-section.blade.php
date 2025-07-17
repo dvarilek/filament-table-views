@@ -5,13 +5,14 @@
     'tableViews',
     'activeTableViewKey',
     'actions',
-    'isCollapsible'
+    'isCollapsible',
 ])
 
 @php
-    use Dvarilek\FilamentTableViews\Components\UserView;
-    use Filament\Actions\ActionGroup;
+    use Dvarilek\FilamentTableViews\Components\TableView\UserView;
     use Filament\Actions\Action;
+    use Filament\Actions\ActionGroup;
+    use Illuminate\View\ComponentAttributeBag;
 @endphp
 
 <div
@@ -23,13 +24,18 @@
 >
     <div class="flex items-center justify-between">
         <div
-            class="flex gap-x-2 items-center"
+            @class([
+                'cursor-pointer' => $isCollapsible,
+                'flex items-center gap-x-2',
+            ])
             @if ($isCollapsible)
                 x-on:click="toggleCollapsedGroup(@js($section))"
             @endif
         >
             @if ($sectionHeading)
-                <h5 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <h5
+                    class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                >
                     {{ $sectionHeading }}
                 </h5>
             @endif
@@ -61,6 +67,7 @@
                 $tooltip = $tableView->getTooltip();
                 $color = $tableView->getColor();
                 $icon = $tableView->getIcon();
+                $isDisabled = $tableView->isDisabled();
 
                 $isUserTableView = $tableView instanceof UserView;
 
@@ -90,79 +97,89 @@
                 {{
                     $attributes
                         ->merge([
-                            'wire:key' => 'filament-table-views-manager-' . $section . '-view-' . $key . '-' . $livewireId
+                            'disabled' => $isDisabled,
+                            'wire:key' => 'filament-table-views-manager-' . $section . '-view-' . $key . '-' . $livewireId,
                         ], false)
                         ->class([
-                            'hover:bg-gray-50 focus:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:focus-visible:bg-white/5' => ! $isActive,
-                            'bg-gray-50 dark:bg-white/5 hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/10 dark:focus:bg-white/10 dark:focus-visible:bg-white/10' => $isActive,
-                            'flex h-10 px-2 rounded-lg transition duration-75',
+                            'bg-gray-50 dark:bg-white/5' => $isActive,
+                            'hover:bg-gray-100 focus:bg-gray-100 focus-visible:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10 dark:focus:bg-white/10 dark:focus-visible:bg-white/10' => $isActive && ! $isDisabled,
+                            'hover:bg-gray-50 focus:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:focus-visible:bg-white/5' => ! $isActive && ! $isDisabled,
+                            'disabled:opacity-70' => $isDisabled,
+                            'flex h-10 rounded-lg px-2 transition duration-75',
                         ])
                 }}
             >
                 <button
-                    class="flex py-1 items-center justify-start gap-x-1.5 text-sm font-normal outline-none"
+                    class="flex items-center justify-start gap-x-1.5 py-1 text-sm font-normal outline-none"
                     type="button"
+                    @disabled($isDisabled)
                     @if (filled($tooltip))
-                        x-tooltip="{ content: {{ \Illuminate\Support\Js::from($tooltip) }}, theme: $store.theme }"
+                        x-tooltip="{
+                            content: {{ Js::from($tooltip) }},
+                            theme: $store.theme,
+                        }"
                     @endif
                     @style([
                         'width: 70%' => $hasActions,
-                        'width: 100%' => ! $hasActions
+                        'width: 100%' => ! $hasActions,
                     ])
-                    wire:click="toggleActiveTableView({{ \Illuminate\Support\Js::from($key) }})"
+                    wire:click="toggleActiveTableView({{ Js::from($key) }})"
                     wire:loading.attr="disabled"
                 >
                     @if ($icon)
                         <x-filament::icon
                             :attributes="
                                 \Filament\Support\prepare_inherited_attributes(
-                                    new \Illuminate\View\ComponentAttributeBag([
+                                    new ComponentAttributeBag([
                                         'icon' => $icon,
                                     ])
                                 )
-                                ->class([
-                                    'h-5 w-5'
-                                ])
+                                    ->class([
+                                        'h-5 w-5',
+                                    ])
                             "
                         />
                     @endif
 
-                    <div class="p-0.5 truncate">
+                    <div class="truncate p-0.5">
                         {{ $label }}
                     </div>
                 </button>
 
                 @if ($hasActions)
-                    <div class="flex py-1 items-center justify-end gap-2 w-2/5" style="width: 30%">
+                    <div
+                        class="flex w-2/5 items-center justify-end gap-2 py-1"
+                        style="width: 30%"
+                    >
                         @if ($isUserTableView && $tableView->isFavorite())
                             @if ($tableView->isPublic())
                                 <x-filament::icon
                                     :attributes="
                                         \Filament\Support\prepare_inherited_attributes(
-                                            new \Illuminate\View\ComponentAttributeBag([
+                                            new ComponentAttributeBag([
                                                 'color' => 'gray',
                                                 'icon' => 'heroicon-o-eye',
                                                 'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.public'),
                                             ])
                                         )
-                                        ->class([
-                                            'h-5 w-5'
-                                        ])
+                                            ->class([
+                                                'h-5 w-5',
+                                            ])
                                     "
                                 />
                             @else
                                 <x-filament::icon-button
                                     :attributes="
                                         \Filament\Support\prepare_inherited_attributes(
-                                            new \Illuminate\View\ComponentAttributeBag([
+                                            new ComponentAttributeBag([
                                                 'color' => 'gray',
                                                 'icon' => 'heroicon-o-eye-slash',
                                                 'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.private'),
                                             ])
                                         )
-                                        ->class([
-                                            'h-5 w-5'
-                                        ])
+                                            ->class([
+                                                'h-5 w-5',
+                                            ])
                                     "
                                 />
                             @endif
@@ -177,6 +194,3 @@
         @endforeach
     </div>
 </div>
-
-
-
