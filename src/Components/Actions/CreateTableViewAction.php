@@ -71,6 +71,8 @@ class CreateTableViewAction extends Action
                 ]);
             });
 
+            unset($this->userTableViews);
+
             /** @phpstan-ignore-next-line */
             $livewire->toggleActiveTableView((string) $record->getKey());
 

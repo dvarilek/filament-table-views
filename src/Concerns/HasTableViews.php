@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Concerns;
 
+use Closure;
 use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Actions\DeleteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Actions\ToggleFavoriteTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Actions\TogglePublicTableViewAction;
 use Dvarilek\FilamentTableViews\Components\DefaultView;
 use Dvarilek\FilamentTableViews\Components\TableViewContract;
 use Dvarilek\FilamentTableViews\Components\UserView;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +37,7 @@ trait HasTableViews
         'default' => true,
         'favorite' => true,
         'public' => true,
-        'personal' => true,
+        'private' => true,
     ];
 
     #[Url(as: 'tableView')]
@@ -65,6 +70,22 @@ trait HasTableViews
         return __('filament-table-views::toolbar.actions.manage-table-views.search.placeholder');
     }
 
+    public function hasTableViewManagerSearch(): bool
+    {
+        return true;
+    }
+
+    public function hasTableViewManagerFilterButtons(): bool
+    {
+        return true;
+    }
+
+    public function hasTableViewManagerCollapsibleGroups(): bool
+    {
+        return true;
+    }
+
+
     public function getTableViewManagerSearchDebounce(): string
     {
         return '500ms';
@@ -73,6 +94,68 @@ trait HasTableViews
     public function getTableViewManagerSearchOnBlur(): bool
     {
         return false;
+    }
+
+    public function getTableViewManagerHeading(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.label');
+    }
+
+    public function getTableViewManagerWidth(): MaxWidth
+    {
+        return MaxWidth::Small;
+    }
+
+    public function getTableViewManagerFavoriteSectionHeading(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.sections.favorite');
+    }
+
+    public function getTableViewManagerPrivateSectionHeading(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.sections.private');
+    }
+
+    public function getTableViewManagerPublicSectionHeading(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.sections.public');
+    }
+
+    public function getTableViewManagerDefaultSectionHeading(): ?string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.sections.default');
+    }
+
+    public function getTableViewManagerEmptyStatePlaceholder(): ?string
+    {
+        return $this->tableViewManagerSearch !== ''
+            ? __('filament-table-views::toolbar.actions.manage-table-views.empty-state.search_empty_state')
+            : __('filament-table-views::toolbar.actions.manage-table-views.empty-state.no_views_empty_state');
+    }
+
+    public function getTableViewManagerFavoriteFilterLabel(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.filters.favorite');
+    }
+
+    public function getTableViewManagerPrivateFilterLabel(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.filters.private');
+    }
+
+    public function getTableViewManagerPublicFilterLabel(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.filters.public');
+    }
+
+    public function getTableViewManagerDefaultFilterLabel(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.filters.default');
+    }
+
+    public function getTableViewManagerResetLabel(): string
+    {
+        return __('filament-table-views::toolbar.actions.manage-table-views.reset_label');
     }
 
     public function persistsActiveTableViewInSession(): bool
@@ -97,7 +180,7 @@ trait HasTableViews
             'default' => true,
             'favorite' => true,
             'public' => true,
-            'personal' => true,
+            'private' => true,
         ];
     }
 
@@ -105,7 +188,7 @@ trait HasTableViews
      * @param  array<mixed, TableViewContract>  $tableViews
      * @return array<mixed, TableViewContract>
      */
-    public function filterTableViewManagerItems(array $tableViews): array
+    public function filterTableViewManagerItems(array $tableViews): array // TODO: Refactor
     {
         return collect($tableViews)
             ->filter(fn (TableViewContract $tableView) => str_contains(strtolower($tableView->getLabel()), strtolower($this->tableViewManagerSearch)))
@@ -128,6 +211,16 @@ trait HasTableViews
             ->model($this->getTableViewModelType());
     }
 
+    public function togglePublicTableViewAction(): Action
+    {
+        return TogglePublicTableViewAction::make();
+    }
+
+    public function toggleFavoriteTableViewAction(): Action
+    {
+        return ToggleFavoriteTableViewAction::make();
+    }
+
     public function editTableViewAction(): Action
     {
         return EditTableViewAction::make();
@@ -135,17 +228,7 @@ trait HasTableViews
 
     public function deleteTableViewAction(): Action
     {
-        return Action::make('todo1');
-    }
-
-    public function togglePublicAction(): Action
-    {
-        return Action::make('todo3');
-    }
-
-    public function toggleFavoriteAction(): Action
-    {
-        return Action::make('todo2');
+        return DeleteTableViewAction::make();
     }
 
     /**
@@ -153,23 +236,10 @@ trait HasTableViews
      */
     public function getTableViewManagerUserActions(): array
     {
-        // TODO: Finish the actions
-        //       Maybe reorganize stuff here into different traits
-        //       Add isVisible and isHidden to TableView
-        //       Add default option (handle public and favorite) + indicator
-        //       Add DefaultViews indicators, maybe consider for UserViews
-        //       Reordering of views (DB persistent)
-        //       TableViewManager configuration object
-        //       Add broader configuration options to views (sizes, labels, allow filters, search etc.)
-        //       Add option to configure from PanelServiceProvider upon registration (global and livewire / resource) instance
-        //       Make sections in view manager collapsible
-        //       UI for toolbar and manager + add plugin classes
-        //       public / private and favorite indicators next to views in manager
-
         return [
             ActionGroup::make([
-                $this->togglePublicAction(),
-                $this->toggleFavoriteAction(),
+                $this->togglePublicTableViewAction(),
+                $this->toggleFavoriteTableViewAction(),
                 $this->editTableViewAction(),
                 $this->deleteTableViewAction(),
             ]),
@@ -186,21 +256,21 @@ trait HasTableViews
         ];
     }
 
-    /**
-     * @param  array<Action | ActionGroup>  $actions
-     * @return array<Action | ActionGroup>
-     */
-    protected function processRecordToTableViewManagerActions(array $actions, ?SavedTableView $record): array
+    public function configureAction(Action $action): void
     {
-        return array_filter($actions, function (Action | ActionGroup $action) use ($record) {
-            if ($action instanceof ActionGroup) {
-                $this->processRecordToTableViewManagerActions($action->getActions(), $record);
-            } elseif ($record !== null) {
-                $action->record($record);
-            }
+        $recordKey = array_column($this->mountedActionsArguments, 'filamentTableViewsRecordKey')[0] ?? null;
 
-            return $action->isVisible();
-        });
+        if (! $recordKey) {
+            return;
+        }
+
+        $record = SavedTableView::query()->find($recordKey);
+
+        if ($record->model_type !== static::getTableViewModelType()) {
+            return;
+        }
+
+        $action->record($record);
     }
 
     /**
@@ -223,7 +293,7 @@ trait HasTableViews
      * @return array<string, UserView>
      */
     #[Computed(persist: true, key: 'filament-table-views::user-table-views-computed-property')]
-    public function getUserTableViews(): array
+    public function userTableViews(): array
     {
         $user = auth()->user();
 
@@ -236,15 +306,6 @@ trait HasTableViews
             ->whereMorphedTo('owner', $user)
             ->where('model_type', static::getTableViewModelType())
             ->get()
-            // 1. public & favorite
-            // 2. public & not favorite
-            // 3. not public & favorite
-            // 4. not public & not favorite
-            ->sortByDesc(static fn (SavedTableView $tableView) => (
-                $tableView->isPublic() ? 2 : 0
-            ) + (
-                $tableView->isFavorite() ? 1 : 0
-            ))
             ->mapWithKeys(static fn (SavedTableView $tableView): array => [
                 $tableView->getKey() => UserView::make($tableView),
             ])
@@ -263,7 +324,8 @@ trait HasTableViews
 
         $activeTableView = collect([
             ...$this->getDefaultTableViews(),
-            ...$this->getUserTableViews(),
+            /* @phpstan-ignore-next-line */
+            ...$this->userTableViews,
         ])
             ->first(fn (TableViewContract $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
 
@@ -291,6 +353,7 @@ trait HasTableViews
             $this->activeTableViewKey = session()->get($activeTableViewSessionKey) ?? null;
         }
     }
+
 
     public function toggleActiveTableView(string $tableViewKey): void
     {

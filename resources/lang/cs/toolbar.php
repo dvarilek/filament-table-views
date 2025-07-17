@@ -66,9 +66,9 @@ return [
 
                 'public' => 'Veřejné',
 
-                'personal' => 'Osobní',
+                'private' => 'Soukromé',
 
-                'default' => 'Defaultní',
+                'default' => 'Výchozí',
 
             ],
 
@@ -78,9 +78,9 @@ return [
 
                 'public' => 'Veřejné',
 
-                'personal' => 'Osobní',
+                'private' => 'Soukromé',
 
-                'default' => 'Defaultní',
+                'default' => 'Výchozí',
 
             ],
 
@@ -116,6 +116,28 @@ return [
             ],
 
         ],
+
+        'toggle-public-table-view' => [
+
+            'make_private_label' => 'Nastavit jako soukromé',
+
+            'make_public_label' => 'Nastavit jako veřejné',
+
+        ],
+
+        'toggle-favorite-table-view' => [
+
+            'remove_favorite_label' => 'Odstranit z oblíbených',
+
+            'make_favorite_label' => 'Přidat do oblíbených',
+
+        ],
+
+        'delete-table-view' => [
+
+            'label' => 'Odstranit pohled',
+
+        ]
 
     ],
 

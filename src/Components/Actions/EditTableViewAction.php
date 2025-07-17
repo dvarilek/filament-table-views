@@ -60,6 +60,8 @@ class EditTableViewAction extends EditAction
                 } else {
                     $record->update($data);
                 }
+
+                unset($livewire->userTableViews);
             });
 
             $this->success();
