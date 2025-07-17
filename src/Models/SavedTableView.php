@@ -20,10 +20,10 @@ use Illuminate\Support\Carbon;
  * @property mixed $owner_id
  * @property class-string<Authenticatable> $owner_type
  * @property class-string<Model> $model_type
- * @property Model $owner
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property TableViewState $view_state
+ * @property Authenticatable $owner
  */
 class SavedTableView extends Model
 {
