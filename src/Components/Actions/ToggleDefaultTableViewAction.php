@@ -20,7 +20,7 @@ class ToggleDefaultTableViewAction extends Action
         parent::setUp();
 
         $this->label(
-            static fn (SavedTableView $record) => $record->isFavoriteForCurrentUser() ?
+            static fn (SavedTableView $record) => $record->isDefaultForCurrentUser() ?
                 __('filament-table-views::toolbar.actions.toggle-favorite-table-view.remove_default_label') :
                 __('filament-table-views::toolbar.actions.toggle-favorite-table-view.make_default_label')
         );

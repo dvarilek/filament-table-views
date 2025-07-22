@@ -5,7 +5,7 @@
 
 @props([
     'livewireId',
-    'defaultTableViews',
+    'systemTableViews',
     'favoriteUserTableViews',
     'privateUserTableViews',
     'publicUserTableViews',
@@ -14,7 +14,7 @@
     'favoriteSectionHeading',
     'privateSectionHeading',
     'publicSectionHeading',
-    'defaultSectionHeading',
+    'systemSectionHeading',
     'isSearchable',
     'searchDebounce' => '500ms',
     'searchOnBlur' => false,
@@ -26,17 +26,17 @@
     'favoriteFilterLabel',
     'privateFilterLabel',
     'publicFilterLabel',
-    'defaultFilterLabel',
+    'systemFilterLabel',
     'resetLabel',
-    'defaultActions',
-    'userActions',
+    'systemTableViewActions',
+    'userTableViewActions',
     'isCollapsible',
     'isReorderable',
 ])
 
 @php
-    $hasDefaultUserTableViews = filled($defaultTableViews);
-    $canRenderDefaultTableViews = $hasDefaultUserTableViews && (! $hasFilterButtons || $activeFilters['default']);
+    $hasSystemTableViews = filled($systemTableViews);
+    $canRenderSystemTableViews = $hasSystemTableViews && (! $hasFilterButtons || $activeFilters['system']);
 
     $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
     $canRenderFavoriteUserTableViews = $hasFavoriteUserTableViews && (! $hasFilterButtons || $activeFilters['favorite']);
@@ -145,11 +145,11 @@
                 >
                     {{ $favoriteFilterLabel }}
 
-                    @if ($favoriteCount = count($favoriteUserTableViews))
+                    @if ($favoriteUserTableViewsCount = count($favoriteUserTableViews))
                         <span
                             class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
                         >
-                            {{ $favoriteCount > 99 ? '99+' : $favoriteCount }}
+                            {{ $favoriteUserTableViewsCount > 99 ? '99+' : $favoriteUserTableViewsCount }}
                         </span>
                     @endif
                 </x-filament::badge>
@@ -173,11 +173,11 @@
                 >
                     {{ $privateFilterLabel }}
 
-                    @if ($privateCount = count($privateUserTableViews))
+                    @if ($privateUserTableViewsCount = count($privateUserTableViews))
                         <span
                             class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
                         >
-                            {{ $privateCount > 99 ? '99+' : $privateCount }}
+                            {{ $privateUserTableViewsCount > 99 ? '99+' : $privateUserTableViewsCount }}
                         </span>
                     @endif
                 </x-filament::badge>
@@ -201,11 +201,11 @@
                 >
                     {{ $publicFilterLabel }}
 
-                    @if ($publicCount = count($publicUserTableViews))
+                    @if ($publicUserTableViewsCount = count($publicUserTableViews))
                         <span
                             class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
                         >
-                            {{ $publicCount > 99 ? '99+' : $publicCount }}
+                            {{ $publicUserTableViewsCount > 99 ? '99+' : $publicUserTableViewsCount }}
                         </span>
                     @endif
                 </x-filament::badge>
@@ -216,10 +216,10 @@
                             new Illuminate\View\ComponentAttributeBag([
                                 'size' => 'sm',
                                 'wire:loading.attr' => 'disabled',
-                                'wire:click' => 'toggleViewManagerFilterButton(\'default\')',
-                                'disabled' => ! $hasDefaultUserTableViews,
-                                'color' => $canRenderDefaultTableViews ? 'primary' : 'gray',
-                                'icon' => $canRenderDefaultTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
+                                'wire:click' => 'toggleViewManagerFilterButton(\'system\')',
+                                'disabled' => ! $hasSystemTableViews,
+                                'color' => $canRenderSystemTableViews ? 'primary' : 'gray',
+                                'icon' => $canRenderSystemTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
                             ])
                         )
                             ->class([
@@ -227,13 +227,13 @@
                             ])
                     "
                 >
-                    {{ $defaultFilterLabel }}
+                    {{ $systemFilterLabel }}
 
-                    @if ($defaultCount = count($defaultTableViews))
+                    @if ($systemTableViewsCount = count($systemTableViews))
                         <span
                             class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
                         >
-                            {{ $defaultCount > 99 ? '99+' : $defaultCount }}
+                            {{ $systemTableViewsCount > 99 ? '99+' : $systemTableViewsCount }}
                         </span>
                     @endif
                 </x-filament::badge>
@@ -241,7 +241,7 @@
         @endif
     </div>
 
-    @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPrivateUserTableViews || $canRenderDefaultTableViews)
+    @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPrivateUserTableViews || $canRenderSystemTableViews)
         <div
             class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
@@ -272,7 +272,7 @@
                     :sectionHeading="$favoriteSectionHeading"
                     :tableViews="$favoriteUserTableViews"
                     :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userActions"
+                    :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
                 />
             @endif
@@ -284,7 +284,7 @@
                     :sectionHeading="$privateSectionHeading"
                     :tableViews="$privateUserTableViews"
                     :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userActions"
+                    :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
                 />
             @endif
@@ -296,19 +296,19 @@
                     :sectionHeading="$publicSectionHeading"
                     :tableViews="$publicUserTableViews"
                     :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userActions"
+                    :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
                 />
             @endif
 
-            @if ($canRenderDefaultTableViews)
+            @if ($canRenderSystemTableViews)
                 <x-filament-table-views::manager.table-view-section
-                    section="default"
+                    section="system"
                     :livewireId="$livewireId"
-                    :sectionHeading="$defaultSectionHeading"
-                    :tableViews="$defaultTableViews"
+                    :sectionHeading="$systemSectionHeading"
+                    :tableViews="$systemTableViews"
                     :activeTableViewKey="$activeTableViewKey"
-                    :actions="$defaultActions"
+                    :actions="$systemTableViewActions"
                     :isCollapsible="$isCollapsible"
                 />
             @endif

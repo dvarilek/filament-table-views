@@ -70,7 +70,7 @@ return [
 
                 'private' => 'Private',
 
-                'default' => 'Default',
+                'system' => 'System',
 
             ],
 
@@ -82,7 +82,7 @@ return [
 
                 'private' => 'Private',
 
-                'default' => 'Default',
+                'system' => 'System',
 
             ],
 

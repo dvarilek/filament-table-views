@@ -80,9 +80,11 @@ class CreateTableViewAction extends Action
                     'is_favorite' => $isFavorite,
                     'is_default' => $isDefault,
                 ]);
+
+                return $tableView;
             });
 
-            unset($this->userTableViews);
+            unset($livewire->userTableViews);
 
             /** @phpstan-ignore-next-line */
             $livewire->toggleActiveTableView((string) $record->getKey());

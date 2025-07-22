@@ -8,8 +8,8 @@
     @php
         $livewireId = $this->getId();
 
-        $defaultTableViews = array_filter(
-            $this->getDefaultTableViews(),
+        $systemTableViews = array_filter(
+            $this->getSystemTableViews(),
             static fn (TableView $tableView) => $tableView->isVisible()
         );
 
@@ -26,7 +26,7 @@
             ->partition(static fn (UserView $tableView) => $tableView->isPublic())
             ->toArray();
 
-        $hasDefaultTableViews = filled($defaultTableViews);
+        $hasSystemTableViews = filled($systemTableViews);
         $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
 
         $activeTableViewKey = $this->activeTableViewKey;
@@ -36,7 +36,7 @@
     <div
         class="-mb-6 flex flex-1 items-center justify-between gap-x-4 px-4 sm:px-6"
     >
-        @if ($hasDefaultTableViews || $hasFavoriteUserTableViews)
+        @if ($hasSystemTableViews || $hasFavoriteUserTableViews)
             <nav
                 class="fi-table-views-toolbar flex items-center gap-x-2 overflow-x-auto"
             >
@@ -56,16 +56,16 @@
                     @endif
                 @endif
 
-                @foreach ($defaultTableViews as $key => $tableView)
+                @foreach ($systemTableViews as $key => $tableView)
                     <x-filament-table-views::table-view
-                        :wire:key="'filament-table-views-toolbar-default-view-' . $key . '-' . $livewireId"
+                        :wire:key="'filament-table-views-toolbar-system-view-' . $key . '-' . $livewireId"
                         :key="$key"
                         :tableView="$tableView"
                         :isActive="$activeTableViewKey === (string) $key"
                     />
                 @endforeach
 
-                @if ($hasDefaultTableViews && $hasFavoriteUserTableViews)
+                @if ($hasSystemTableViews && $hasFavoriteUserTableViews)
                     <span
                         class="h-6 border-e border-gray-300 dark:border-gray-700"
                     ></span>
@@ -95,7 +95,7 @@
 
                 <x-filament-table-views::manager
                     :livewireId="$livewireId"
-                    :defaultTableViews="$this->filterTableViewManagerItems($defaultTableViews)"
+                    :systemTableViews="$this->filterTableViewManagerItems($systemTableViews)"
                     :favoriteUserTableViews="$this->filterTableViewManagerItems($favoriteUserTableViews)"
                     :privateUserTableViews="$this->filterTableViewManagerItems($privateUserTableViews)"
                     :publicUserTableViews="$this->filterTableViewManagerItems($publicUserTableViews)"
@@ -104,7 +104,7 @@
                     :favoriteSectionHeading="$this->getTableViewManagerFavoriteSectionHeading()"
                     :privateSectionHeading="$this->getTableViewManagerPrivateSectionHeading()"
                     :publicSectionHeading="$this->getTableViewManagerPublicSectionHeading()"
-                    :defaultSectionHeading="$this->getTableViewManagerDefaultSectionHeading()"
+                    :systemSectionHeading="$this->getTableViewManagerSystemSectionHeading()"
                     :isSearchable="$this->hasTableViewManagerSearch()"
                     :searchDebounce="$this->getTableViewManagerSearchDebounce()"
                     :searchOnBlur="$this->getTableViewManagerSearchOnBlur()"
@@ -116,11 +116,13 @@
                     :favoriteFilterLabel="$this->getTableViewManagerFavoriteFilterLabel()"
                     :privateFilterLabel="$this->getTableViewManagerPrivateFilterLabel()"
                     :publicFilterLabel="$this->getTableViewManagerPublicFilterLabel()"
-                    :defaultFilterLabel="$this->getTableViewManagerDefaultFilterLabel()"
+                    :systemFilterLabel="$this->getTableViewManagerSystemFilterLabel()"
                     :resetLabel="$this->getTableViewManagerResetLabel()"
-                    :defaultActions="$this->getTableViewManagerDefaultActions()"
-                    :userActions="$this->getTableViewManagerUserActions()"
-                    :isCollapsible="$this->hasTableViewManagerCollapsibleGroups()"
+                    :systemTableViewActions="$this->getTableViewManagerSystemActions()"
+                    :userTableViewActions="$this->getTableViewManagerUserActions()"
+                    :isCollapsible="$this->isTableViewManagerCollapsible()"
+                    :isReorderable="$this->isTableViewManagerReorderable()"
+
                 />
             </x-filament::dropdown>
         </div>

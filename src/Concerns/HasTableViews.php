@@ -34,7 +34,7 @@ trait HasTableViews
 
     #[Locked]
     public array $tableViewManagerActiveFilters = [
-        'default' => true,
+        'system' => true,
         'favorite' => true,
         'public' => true,
         'private' => true,
@@ -80,7 +80,12 @@ trait HasTableViews
         return true;
     }
 
-    public function hasTableViewManagerCollapsibleGroups(): bool
+    public function isTableViewManagerCollapsible(): bool
+    {
+        return true;
+    }
+
+    public function isTableViewManagerReorderable(): bool
     {
         return true;
     }
@@ -120,9 +125,9 @@ trait HasTableViews
         return __('filament-table-views::toolbar.actions.manage-table-views.sections.public');
     }
 
-    public function getTableViewManagerDefaultSectionHeading(): ?string
+    public function getTableViewManagerSystemSectionHeading(): ?string
     {
-        return __('filament-table-views::toolbar.actions.manage-table-views.sections.default');
+        return __('filament-table-views::toolbar.actions.manage-table-views.sections.system');
     }
 
     public function getTableViewManagerEmptyStatePlaceholder(): ?string
@@ -147,9 +152,9 @@ trait HasTableViews
         return __('filament-table-views::toolbar.actions.manage-table-views.filters.public');
     }
 
-    public function getTableViewManagerDefaultFilterLabel(): string
+    public function getTableViewManagerSystemFilterLabel(): string
     {
-        return __('filament-table-views::toolbar.actions.manage-table-views.filters.default');
+        return __('filament-table-views::toolbar.actions.manage-table-views.filters.system');
     }
 
     public function getTableViewManagerResetLabel(): string
@@ -176,7 +181,7 @@ trait HasTableViews
         $this->tableViewManagerSearch = '';
 
         $this->tableViewManagerActiveFilters = [
-            'default' => true,
+            'system' => true,
             'favorite' => true,
             'public' => true,
             'private' => true,
@@ -254,7 +259,7 @@ trait HasTableViews
     /**
      * @return array<Action | ActionGroup>
      */
-    public function getTableViewManagerDefaultActions(): array
+    public function getTableViewManagerSystemActions(): array
     {
         return [
 
@@ -281,7 +286,7 @@ trait HasTableViews
     /**
      * @return array<string, TableView>
      */
-    public function getDefaultTableViews(): array
+    public function getSystemTableViews(): array
     {
         return collect($this->getTableViews())
             ->mapWithKeys(static function (TableView $tableView) {
@@ -328,7 +333,7 @@ trait HasTableViews
         }
 
         $activeTableView = collect([
-            ...$this->getDefaultTableViews(),
+            ...$this->getSystemTableViews(),
             /* @phpstan-ignore-next-line */
             ...$this->userTableViews,
         ])

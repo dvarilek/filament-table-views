@@ -70,7 +70,7 @@ return [
 
                 'private' => 'Soukromé',
 
-                'default' => 'Výchozí',
+                'system' => 'Systémové',
 
             ],
 
@@ -82,7 +82,7 @@ return [
 
                 'private' => 'Soukromé',
 
-                'default' => 'Výchozí',
+                'system' => 'Systémové',
 
             ],
 
