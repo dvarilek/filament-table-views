@@ -102,7 +102,6 @@ test('table view model can be converted into table view', function () {
         'icon' => 'heroicon-o-user',
         'color' => 'primary',
         'is_public' => false,
-        'is_favorite' => true,
         'model_type' => Order::class,
         'view_state' => $viewState,
     ]);
@@ -116,6 +115,181 @@ test('table view model can be converted into table view', function () {
         ->getColor()->toBe($model->color)
         ->getIdentifier()->toBe((string) $model->getKey())
         ->isPublic()->toBe($model->is_public)
-        ->isFavorite()->toBe($model->is_favorite)
         ->getTableViewState()->toBe($viewState);
+});
+
+test('isFavoriteForCurrentUser correctly determines preference based on current authenticated user config', function () {
+    /* @var User $currentUser */
+    $currentUser = auth()->user();
+
+    /* @var User $otherUser */
+    $otherUser = User::factory()->create();
+
+    /* @var SavedTableView $tableView */
+    $tableView = $otherUser->tableViews()->create([
+        'name' => 'Public View',
+        'model_type' => Order::class,
+        'is_public' => true,
+        'view_state' => new TableViewState,
+    ]);
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeFalse();
+
+    $otherUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_favorite' => true,
+    ]);
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeFalse();
+
+    $currentUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_favorite' => true,
+    ]);
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeTrue();
+});
+
+test('isDefaultForCurrentUser correctly determines preference based on current authenticated user config', function () {
+    /* @var User $currentUser */
+    $currentUser = auth()->user();
+
+    /* @var User $otherUser */
+    $otherUser = User::factory()->create();
+
+    /* @var SavedTableView $tableView */
+    $tableView = $otherUser->tableViews()->create([
+        'name' => 'Public View',
+        'model_type' => Order::class,
+        'is_public' => true,
+        'view_state' => new TableViewState,
+    ]);
+
+    expect($tableView->isDefaultForCurrentUser())->toBeFalse();
+
+    $otherUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_default' => true,
+    ]);
+
+    expect($tableView->isDefaultForCurrentUser())->toBeFalse();
+
+    $currentUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_default' => true,
+    ]);
+
+    expect($tableView->isDefaultForCurrentUser())->toBeTrue();
+});
+
+test('toggleFavoriteForCurrentUser correctly toggles preference based on current authenticated user config', function () {
+    /* @var User $currentUser */
+    $currentUser = auth()->user();
+
+    /* @var User $otherUser */
+    $otherUser = User::factory()->create();
+
+    /* @var SavedTableView $tableView */
+    $tableView = $otherUser->tableViews()->create([
+        'name' => 'Public View',
+        'model_type' => Order::class,
+        'is_public' => true,
+        'view_state' => new TableViewState,
+    ]);
+
+    $currentUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_favorite' => false,
+    ]);
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeFalse();
+
+    $tableView->toggleFavoriteForCurrentUser();
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeTrue();
+
+    $tableView->toggleFavoriteForCurrentUser();
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeFalse();
+
+    $otherUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_favorite' => true,
+    ]);
+
+    expect($tableView->isFavoriteForCurrentUser())->toBeFalse();
+});
+
+test('toggleDefaultForCurrentUser correctly toggles preference based on current authenticated user config', function () {
+    /* @var User $currentUser */
+    $currentUser = auth()->user();
+
+    /* @var User $otherUser */
+    $otherUser = User::factory()->create();
+
+    /* @var SavedTableView $tableView */
+    $tableView = $otherUser->tableViews()->create([
+        'name' => 'Public View',
+        'model_type' => Order::class,
+        'is_public' => true,
+        'view_state' => new TableViewState,
+    ]);
+
+    $currentUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_default' => false,
+    ]);
+
+    expect($tableView->isDefaultForCurrentUser())->toBeFalse();
+
+    $tableView->toggleDefaultForCurrentUser();
+
+    expect($tableView->isDefaultForCurrentUser())->toBeTrue();
+
+    $tableView->toggleDefaultForCurrentUser();
+
+    expect($tableView->isDefaultForCurrentUser())->toBeFalse();
+
+    $otherUser->tableViewConfigs()->create([
+        'saved_table_view_id' => $tableView->getKey(),
+        'is_default' => true,
+    ]);
+
+    expect($tableView->isDefaultForCurrentUser())->toBeFalse();
+});
+
+test('only one saved table view user config can be default per user morph', function () {
+    /* @var User $user */
+    $user = auth()->user();
+
+    $configs = collect();
+
+    foreach (range(1, 5) as $i) {
+        /* @var SavedTableView $tableView */
+        $tableView = $user->tableViews()->create([
+            'name' => "View {$i}",
+            'model_type' => Order::class,
+            'is_public' => true,
+            'view_state' => new TableViewState,
+        ]);
+
+        $config = $user->tableViewConfigs()->create([
+            'saved_table_view_id' => $tableView->getKey(),
+            'is_default' => false,
+            'is_favorite' => false,
+        ]);
+
+        $configs->push($config);
+    }
+
+    expect($user->tableViewConfigs())
+        ->count()->toBe(5)
+        ->where('is_default', true)->count()->toBe(0);
+
+    $configs->skip(2)->first()->update(['is_default' => true]);
+    $configs->skip(1)->first()->update(['is_default' => true]);
+    $configs->first()->update(['is_default' => true]);
+
+    expect($user->tableViewConfigs())
+        ->where('is_default', true)->count()->toBe(1);
 });

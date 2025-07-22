@@ -7,6 +7,7 @@ namespace Dvarilek\FilamentTableViews\Concerns;
 use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\DeleteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Actions\ToggleDefaultTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\ToggleFavoriteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\TogglePublicTableViewAction;
 use Dvarilek\FilamentTableViews\Components\TableView\BaseTableView;
@@ -219,6 +220,11 @@ trait HasTableViews
         return ToggleFavoriteTableViewAction::make();
     }
 
+    public function toggleDefaultTableViewAction(): Action
+    {
+        return ToggleDefaultTableViewAction::make();
+    }
+
     public function editTableViewAction(): Action
     {
         return EditTableViewAction::make();
@@ -238,6 +244,7 @@ trait HasTableViews
             ActionGroup::make([
                 $this->togglePublicTableViewAction(),
                 $this->toggleFavoriteTableViewAction(),
+                $this->toggleDefaultTableViewAction(),
                 $this->editTableViewAction(),
                 $this->deleteTableViewAction(),
             ]),

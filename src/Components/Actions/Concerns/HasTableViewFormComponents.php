@@ -29,6 +29,8 @@ trait HasTableViewFormComponents
 
     protected ?Closure $modifyIsFavoriteFormComponentUsing = null;
 
+    protected ?Closure $modifyIsDefaultFormComponentUsing = null;
+
     protected ?Closure $modifyDescriptionFormComponentUsing = null;
 
     /**
@@ -67,6 +69,13 @@ trait HasTableViewFormComponents
     public function isFavoriteFormComponent(Closure $callback): static
     {
         $this->modifyIsFavoriteFormComponentUsing = $callback;
+
+        return $this;
+    }
+
+    public function isDefaultFormComponent(Closure $callback): static
+    {
+        $this->modifyIsDefaultFormComponentUsing = $callback;
 
         return $this;
     }
@@ -126,6 +135,7 @@ trait HasTableViewFormComponents
             $this->getColorFormComponent(),
             $this->getIsPublicFormComponent(),
             $this->getIsFavoriteFormComponent(),
+            $this->getIsDefaultFormComponent(),
             $this->getDescriptionFormComponent(),
         ];
     }
@@ -208,6 +218,23 @@ trait HasTableViewFormComponents
 
         if ($this->modifyIsFavoriteFormComponentUsing) {
             $component = $this->evaluate($this->modifyIsFavoriteFormComponentUsing, [
+                'field' => $component,
+                'component' => $component,
+            ], [
+                Toggle::class => $component,
+            ]) ?? null;
+        }
+
+        return $component;
+    }
+
+    public function getIsDefaultFormComponent(): ?Field
+    {
+        $component = Toggle::make('is_default')
+            ->label(__('filament-table-views::toolbar.actions.table-view-action.form.is_default'));
+
+        if ($this->modifyIsDefaultFormComponentUsing) {
+            $component = $this->evaluate($this->modifyIsDefaultFormComponentUsing, [
                 'field' => $component,
                 'component' => $component,
             ], [

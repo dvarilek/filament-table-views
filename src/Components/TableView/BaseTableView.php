@@ -32,6 +32,8 @@ abstract class BaseTableView extends Component
 
     protected int | string | Closure | null $identifier = null;
 
+    protected bool | Closure $isDefault = false;
+
     public function label(string | Closure | null $label): static
     {
         $this->label = $label;
@@ -70,6 +72,13 @@ abstract class BaseTableView extends Component
         return $this;
     }
 
+    public function default(bool | Closure $condition): static
+    {
+        $this->isDefault = $condition;
+
+        return $this;
+    }
+
     public function getLabel(): ?string
     {
         return $this->evaluate($this->label);
@@ -93,11 +102,11 @@ abstract class BaseTableView extends Component
     }
 
     /**
-     * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string}
+     * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | null
      */
-    public function getColor(): string | array
+    public function getColor(): string | array | null
     {
-        return $this->evaluate($this->color) ?? 'primary';
+        return $this->evaluate($this->color);
     }
 
     public function getIdentifier(): string
@@ -113,6 +122,11 @@ abstract class BaseTableView extends Component
         }
 
         return (string) $identifier;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->evaluate($this->isDefault);
     }
 
     abstract public function getTableViewState(): TableViewState;

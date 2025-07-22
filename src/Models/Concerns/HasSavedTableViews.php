@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 trait HasSavedTableViews
 {
     /**
-     * @return MorphMany<SavedTableView, self>
+     * @return MorphMany<SavedTableView, static>
      */
     public function tableViews(): MorphMany
     {
@@ -28,7 +28,7 @@ trait HasSavedTableViews
     }
 
     /**
-     * @return MorphMany<SavedTableViewUserConfig, self>
+     * @return MorphMany<SavedTableViewUserConfig, static>
      */
     public function tableViewConfigs(): MorphMany
     {

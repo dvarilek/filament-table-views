@@ -7,8 +7,10 @@ namespace Dvarilek\FilamentTableViews\Models;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * @property string $name
@@ -23,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property TableViewState $view_state
+ * @property Collection<int, SavedTableViewUserConfig> $tableViewUserConfigs
  * @property Authenticatable $owner
  */
 class SavedTableView extends Model
@@ -36,7 +39,6 @@ class SavedTableView extends Model
         'icon',
         'color',
         'is_public',
-        'is_favorite',
         'owner_id',
         'owner_type',
         'model_type',
@@ -44,13 +46,17 @@ class SavedTableView extends Model
     ];
 
     /**
-     * @var array<string, mixed>
+     * @return array<string, mixed>
      */
-    protected $casts = [
-        'is_public' => 'boolean',
-        'is_favorite' => 'boolean',
-        'view_state' => TableViewState::class,
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_public' => 'boolean',
+            'view_state' => TableViewState::class,
+        ];
+    }
+
+    protected ?SavedTableViewUserConfig $currentAuthenticatedUserTableViewConfig = null;
 
     public function initializeTableView(): void
     {
@@ -62,7 +68,15 @@ class SavedTableView extends Model
     }
 
     /**
-     * @return MorphTo<Authenticatable, self>
+     * @return HasMany<SavedTableViewUserConfig, static>
+     */
+    public function tableViewUserConfigs(): HasMany
+    {
+        return $this->hasMany(SavedTableViewUserConfig::class, 'saved_table_view_id', 'id');
+    }
+
+    /**
+     * @return MorphTo<Authenticatable, static>
      */
     public function owner(): MorphTo
     {
@@ -74,18 +88,55 @@ class SavedTableView extends Model
         return $this->is_public;
     }
 
-    public function isFavorite(): bool
+    public function getCurrentAuthenticatedUserTableViewConfig(): ?SavedTableViewUserConfig
     {
-        return $this->is_favorite;
+        if (! $this->currentAuthenticatedUserTableViewConfig) {
+            $this->currentAuthenticatedUserTableViewConfig = $this->tableViewUserConfigs()
+                ->whereMorphedTo('user', auth()->user())
+                ->first();
+        }
+
+        return $this->currentAuthenticatedUserTableViewConfig;
     }
 
     public function togglePublic(): void
     {
-        $this->update(['is_public' => ! $this->is_public]);
+        $this->update(['is_public' => ! $this->isPublic()]);
     }
 
-    public function toggleFavorite(): void
+    public function isFavoriteForCurrentUser(): bool
     {
-        $this->update(['is_favorite' => ! ($this->is_favorite)]);
+        return $this->getCurrentAuthenticatedUserTableViewConfig()?->isFavorite() ?? false;
+    }
+
+    public function isDefaultForCurrentUser(): bool
+    {
+        return $this->getCurrentAuthenticatedUserTableViewConfig()?->isDefault() ?? false;
+    }
+
+    public function toggleFavoriteForCurrentUser(): void
+    {
+        $config = $this->getCurrentAuthenticatedUserTableViewConfig();
+
+        if (! $config) {
+            return;
+        }
+
+        $config->update([
+            'is_favorite' => ! $config->isFavorite(),
+        ]);
+    }
+
+    public function toggleDefaultForCurrentUser(): void
+    {
+        $config = $this->getCurrentAuthenticatedUserTableViewConfig();
+
+        if (! $config) {
+            return;
+        }
+
+        $config->update([
+            'is_default' => ! $config->isDefault(),
+        ]);
     }
 }

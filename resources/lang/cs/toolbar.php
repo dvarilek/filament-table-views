@@ -20,6 +20,8 @@ return [
 
                 'is_favorite' => 'Je oblíbený',
 
+                'is_default' => 'Je výchozí',
+
                 'description' => 'Popis',
 
             ],
@@ -130,6 +132,10 @@ return [
             'remove_favorite_label' => 'Odstranit z oblíbených',
 
             'make_favorite_label' => 'Přidat do oblíbených',
+
+            'remove_default_label' => 'Zrušit jako výchozí',
+
+            'make_default_label' => 'Nastavit jako výchozí',
 
         ],
 

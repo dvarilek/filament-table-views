@@ -30,7 +30,7 @@
             ], false)
             ->class([
                 // rounded corners on the bottom would be nice
-                'px-2 pt-2 pb-1',
+                'p-2',
                 'rounded-t-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 relative' => $isActive,
                 'disabled:opacity-70' => $isDisabled,
             ])

@@ -13,3 +13,4 @@ package-lock.json   export-ignore
 composer.lock       export-ignore
 pint.json           export-ignore
 .styleci.yml        export-ignore
+phpstan.neon        export-ignore

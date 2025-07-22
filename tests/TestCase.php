@@ -28,6 +28,7 @@ abstract class TestCase extends OrchestraTestCase
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
 
         (require __DIR__ . '/../database/migrations/create_saved_table_views_table.php')->up();
+        (require __DIR__ . '/../database/migrations/create_saved_table_view_user_configs.php')->up();
     }
 
     /**

@@ -20,6 +20,8 @@ return [
 
                 'is_favorite' => 'Is favorite',
 
+                'is_default' => 'Is default',
+
                 'description' => 'Description',
 
             ],
@@ -128,9 +130,13 @@ return [
 
         'toggle-favorite-table-view' => [
 
-            'remove_favorite_label' => 'Remove favorite',
+            'remove_favorite_label' => 'Remove from favorites',
 
-            'make_favorite_label' => 'Make favorite',
+            'make_favorite_label' => 'Add to favorites',
+
+            'remove_default_label' => 'Remove as default',
+
+            'make_default_label' => 'Set as default',
 
         ],
 

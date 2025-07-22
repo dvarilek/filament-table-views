@@ -61,14 +61,24 @@ class CreateTableViewAction extends Action
                 $user = auth()->user();
 
                 if (! $user) {
-                    throw new Exception('Cannot create TableView, user not found.');
+                    throw new Exception('Cannot create TableView without an authenticated user being present.');
                 }
 
-                /* @var SavedTableView */
-                return $user->tableViews()->create([
+                $isFavorite = $data['is_favorite'];
+                $isDefault = $data['is_default'];
+                unset($data['is_favorite'], $data['is_default']);
+
+                /* @var SavedTableView $tableView */
+                $tableView = $user->tableViews()->create([
                     ...$data,
                     'model_type' => $tableViewModelType,
                     'view_state' => TableViewState::fromLivewire($livewire),
+                ]);
+
+                $user->tableViewConfigs()->create([
+                    'saved_table_view_id' => $tableView->getKey(),
+                    'is_favorite' => $isFavorite,
+                    'is_default' => $isDefault,
                 ]);
             });
 

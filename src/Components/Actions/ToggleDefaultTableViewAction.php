@@ -8,11 +8,11 @@ use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Filament\Actions\Action;
 use Filament\Tables\Contracts\HasTable;
 
-class ToggleFavoriteTableViewAction extends Action
+class ToggleDefaultTableViewAction extends Action
 {
     public static function getDefaultName(): ?string
     {
-        return 'toggleFavoriteTableView';
+        return 'toggleDefaultTableView';
     }
 
     protected function setUp(): void
@@ -21,16 +21,16 @@ class ToggleFavoriteTableViewAction extends Action
 
         $this->label(
             static fn (SavedTableView $record) => $record->isFavoriteForCurrentUser() ?
-                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.remove_favorite_label') :
-                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.make_favorite_label')
+                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.remove_default_label') :
+                __('filament-table-views::toolbar.actions.toggle-favorite-table-view.make_default_label')
         );
 
-        $this->icon(static fn (SavedTableView $record) => $record->isFavoriteForCurrentUser() ? 'heroicon-o-x-mark' : 'heroicon-o-heart');
+        $this->icon(static fn (SavedTableView $record) => $record->isDefaultForCurrentUser() ? 'heroicon-o-bookmark-slash' : 'heroicon-o-bookmark');
 
         $this->color('gray');
 
         $this->action(function (SavedTableView $record, HasTable $livewire): void {
-            $record->toggleFavoriteForCurrentUser();
+            $record->toggleDefaultForCurrentUser();
 
             unset($livewire->userTableViews);
         });

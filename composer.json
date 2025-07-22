@@ -1,6 +1,6 @@
 {
   "name": "dvarilek/filament-table-views",
-  "description": "Configurable Views for persisting filters, sorting and grouping in Filament Table.",
+  "description": "Persistent and configurable views for saving the state of a Filament table",
   "keywords": [
     "filament",
     "select",

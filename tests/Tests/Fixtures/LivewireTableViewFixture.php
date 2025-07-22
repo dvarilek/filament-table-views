@@ -5,10 +5,12 @@ namespace Dvarilek\FilamentTableViews\Tests\Tests\Fixtures;
 use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
 use Dvarilek\FilamentTableViews\Tests\Models\Product;
+use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,11 +18,17 @@ use Livewire\Component;
 
 class LivewireTableViewFixture extends Component implements HasForms, Tables\Contracts\HasTable
 {
-    use HasTableViews, Tables\Concerns\InteractsWithTable {
-        Tables\Concerns\InteractsWithTable::filterTableQuery insteadof HasTableViews;
-        Tables\Concerns\InteractsWithTable::filterTableQuery as baseFilterTableQuery;
+    use HasTableViews {
+        HasTableViews::configureAction insteadof InteractsWithActions;
+        InteractsWithActions::configureAction as baseConfigureAction;
     }
+    use InteractsWithActions;
     use InteractsWithForms;
+    use InteractsWithTable;
+    use InteractsWithTable {
+        InteractsWithTable::filterTableQuery insteadof HasTableViews;
+        InteractsWithTable::filterTableQuery as baseFilterTableQuery;
+    }
 
     public function filterTableQuery(Builder $query): Builder
     {

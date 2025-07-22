@@ -8,6 +8,7 @@ use Closure;
 use Dvarilek\FilamentTableViews\Components\Actions\Concerns\HasTableViewFormComponents;
 use Dvarilek\FilamentTableViews\DTO\TableViewState;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
+use Exception;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
@@ -50,16 +51,39 @@ class EditTableViewAction extends EditAction
 
         $this->action(function (): void {
             $this->process(static function (EditTableViewAction $action, HasTable $livewire, SavedTableView $record, array $data): void {
+                $user = auth()->user();
+
+                if (! $user) {
+                    throw new Exception('Cannot edit TableView without an authenticated user being present.');
+                }
+
                 if ($data['should_update_view'] ?? null) {
                     $data['view_state'] = TableViewState::fromLivewire($livewire);
                 }
 
-                unset($data['should_update_view']);
+                $isFavorite = $data['is_favorite'];
+                $isDefault = $data['is_default'];
+                unset($data['is_favorite'], $data['is_default'], $data['should_update_view']);
 
                 if ($translatableContentDriver = $livewire->makeFilamentTranslatableContentDriver()) {
                     $translatableContentDriver->updateRecord($record, $data);
                 } else {
                     $record->update($data);
+                }
+
+                $config = $record->getCurrentAuthenticatedUserTableViewConfig();
+
+                if ($config) {
+                    $config->update([
+                        'is_favorite' => $isFavorite,
+                        'is_default' => $isDefault,
+                    ]);
+                } else {
+                    $user->tableViewConfigs()->create([
+                        'saved_table_view_id' => $record->getKey(),
+                        'is_favorite' => $isFavorite,
+                        'is_default' => $isDefault,
+                    ]);
                 }
 
                 unset($livewire->userTableViews);

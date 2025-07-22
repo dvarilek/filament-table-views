@@ -185,6 +185,23 @@
                             @endif
                         @endif
 
+                        @if ($tableView->isDefault())
+                            <x-filament::icon
+                                :attributes="
+                                    \Filament\Support\prepare_inherited_attributes(
+                                        new ComponentAttributeBag([
+                                            'color' => 'gray',
+                                            'icon' => 'heroicon-o-bookmark',
+                                            'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.default'),
+                                        ])
+                                    )
+                                        ->class([
+                                            'h-5 w-5',
+                                        ])
+                                "
+                            />
+                        @endif
+
                         @foreach ($actions as $action)
                             {{ $action }}
                         @endforeach

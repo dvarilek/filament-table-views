@@ -6,6 +6,7 @@ namespace Dvarilek\FilamentTableViews\Models;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property mixed $saved_table_view_id
  * @property mixed $user_id
  * @property class-string<Authenticatable> $user_type
+ * @property SavedTableView $tableView
  * @property Authenticatable $user
  */
 class SavedTableViewUserConfig extends Model
@@ -40,12 +42,42 @@ class SavedTableViewUserConfig extends Model
     ];
 
     /**
-     * @return MorphTo<Authenticatable, self>
+     * @return BelongsTo<SavedTableView, static>
+     */
+    public function tableView(): BelongsTo
+    {
+        return $this->belongsTo(SavedTableView::class, 'saved_table_view_id', 'id');
+    }
+
+    /**
+     * @return MorphTo<Authenticatable, static>
      */
     public function user(): MorphTo
     {
         return $this->morphTo();
     }
 
-    // TODO: Link this and SavedTableView
+    public function isFavorite(): bool
+    {
+        return $this->is_favorite;
+    }
+
+    public function isDefault(): bool
+    {
+        return $this->is_default;
+    }
+
+    public static function boot(): void
+    {
+        parent::boot();
+
+        static::updating(static function (SavedTableViewUserConfig $config) {
+            if ($config->isDirty('is_default') && $config->isDefault()) {
+                static::query()
+                    ->whereMorphedTo('user', $config->user)
+                    ->where($config->getKeyName(), '!=', $config->getKey())
+                    ->update(['is_default' => false]);
+            }
+        });
+    }
 }

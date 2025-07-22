@@ -22,7 +22,6 @@ return new class extends Migration
                 : $table->string('color', 255)->nullable()->default(null);
 
             $table->boolean('is_public')->default(false);
-            $table->boolean('is_favorite')->default(false);
 
             $table->morphs('owner');
             $table->string('model_type', 255);
