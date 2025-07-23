@@ -21,6 +21,7 @@ use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -188,6 +189,11 @@ trait HasTableViews
         ];
     }
 
+    public function reorderTableViewManagerTableViews(mixed $group, array $tableViews): void
+    {
+        dd($group, $tableViews);
+    }
+
     /**
      * @param  array<mixed, BaseTableView>  $tableViews
      * @return array<mixed, BaseTableView>
@@ -322,6 +328,17 @@ trait HasTableViews
             ->toArray();
     }
 
+    /**
+     * @return Collection<int, BaseTableView>
+     */
+    protected function getAllTableViews(): Collection
+    {
+        return collect([
+            ...$this->getSystemTableViews(),
+            ...$this->userTableViews,
+        ]);
+    }
+
     protected function getActiveTableView(): ?BaseTableView
     {
         if ($this->cachedActiveTableView) {
@@ -332,11 +349,7 @@ trait HasTableViews
             return null;
         }
 
-        $activeTableView = collect([
-            ...$this->getSystemTableViews(),
-            /* @phpstan-ignore-next-line */
-            ...$this->userTableViews,
-        ])
+        $activeTableView = $this->getAllTableViews()
             ->first(fn (BaseTableView $tableView) => $tableView->getIdentifier() === $this->activeTableViewKey);
 
         return $this->cachedActiveTableView = $activeTableView;
@@ -355,12 +368,29 @@ trait HasTableViews
         $shouldPersistActiveTableViewInSession = $this->persistsActiveTableViewInSession();
         $activeTableViewSessionKey = $this->getActiveTableViewSessionKey();
 
-        if (
-            ($this->activeTableViewKey === null) &&
-            $shouldPersistActiveTableViewInSession &&
-            session()->has($activeTableViewSessionKey)
-        ) {
-            $this->activeTableViewKey = session()->get($activeTableViewSessionKey) ?? null;
+        if ($this->activeTableViewKey === null) {
+            if ($shouldPersistActiveTableViewInSession && session()->has($activeTableViewSessionKey)) {
+                $this->activeTableViewKey = session()->get($activeTableViewSessionKey) ?? null;
+            } else {
+                $defaultTableView = $this->getAllTableViews()
+                    ->reduce(function ($carry, BaseTableView $tableView) {
+                        if ($carry instanceof UserView && $carry->isDefault()) {
+                            return $carry;
+                        }
+
+                        if ($tableView instanceof UserView && $tableView->isDefault()) {
+                            return $tableView;
+                        }
+
+                        if ($carry === null && $tableView->isDefault()) {
+                            return $tableView;
+                        }
+
+                        return $carry;
+                    });
+
+                $this->activeTableViewKey = $defaultTableView->getIdentifier();
+            }
         }
     }
 

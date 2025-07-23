@@ -49,7 +49,7 @@
                         :isActive="true"
                     />
 
-                    @if ($hasDefaultTableViews || $hasFavoriteUserTableViews)
+                    @if ($hasSystemTableViews || $hasFavoriteUserTableViews)
                         <span
                             class="h-6 border-e border-gray-300 dark:border-gray-700"
                         ></span>
@@ -122,7 +122,6 @@
                     :userTableViewActions="$this->getTableViewManagerUserActions()"
                     :isCollapsible="$this->isTableViewManagerCollapsible()"
                     :isReorderable="$this->isTableViewManagerReorderable()"
-
                 />
             </x-filament::dropdown>
         </div>

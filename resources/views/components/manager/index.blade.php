@@ -240,29 +240,55 @@
             </div>
         @endif
     </div>
+    <script
+        defer
+        src="https://cdn.jsdelivr.net/npm/@alpinejs/sort@3.x.x/dist/cdn.min.js"
+    ></script>
 
     @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPrivateUserTableViews || $canRenderSystemTableViews)
         <div
             class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
-            @if ($isCollapsible)
+            @if ($isCollapsible || $isReorderable)
                 x-data="{
-                    collapsedGroups: [],
+                                @if ($isCollapsible)
+             collapsedGroups: [],
 
-                    toggleCollapsedGroup: function (group) {
-                        if (this.isGroupCollapsed(group)) {
-                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
+                                    toggleCollapsedGroup: function (group) {
+                                        if (this.isGroupCollapsed(group)) {
+                                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
 
-                            return
-                        }
+                                            return
+                                        }
 
-                        this.collapsedGroups.push(group)
-                    },
+                                        this.collapsedGroups.push(group)
+                                    },
 
-                    isGroupCollapsed: function (group) {
-                        return this.collapsedGroups.includes(group)
-                    },
-                }"
+                                    isGroupCollapsed: function (group) {
+                                        return this.collapsedGroups.includes(group)
+                                    }, @endif
+
+
+                                @if ($isReorderable)
+             reorderingGroup: null,
+
+                                    startReordering: function (group) {
+                                        this.reorderingGroup = group
+                                    },
+
+                                    stopReordering: function () {
+                                        this.reorderingGroup = null
+                                    },
+
+                                    isReordering: function (group) {
+                                        return this.reorderingGroup === group
+                                    },
+
+                                    handleReorder: function (event) {
+                                        console.log(event)
+                                    }, @endif
+
+                            }"
             @endif
         >
             @if ($canRenderFavoriteUserTableViews)
@@ -274,6 +300,7 @@
                     :activeTableViewKey="$activeTableViewKey"
                     :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
+                    :isReorderable="$isReorderable"
                 />
             @endif
 
@@ -286,6 +313,7 @@
                     :activeTableViewKey="$activeTableViewKey"
                     :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
+                    :isReorderable="$isReorderable"
                 />
             @endif
 
@@ -298,6 +326,7 @@
                     :activeTableViewKey="$activeTableViewKey"
                     :actions="$userTableViewActions"
                     :isCollapsible="$isCollapsible"
+                    :isReorderable="$isReorderable"
                 />
             @endif
 

@@ -6,6 +6,7 @@
     'activeTableViewKey',
     'actions',
     'isCollapsible',
+    'isReorderable' => false,
 ])
 
 @php
@@ -21,8 +22,11 @@
         x-bind:aria-expanded="! isGroupCollapsed(@js($section))"
         aria-expanded="true"
     @endif
+    @if ($isReorderable)
+        x-sortable="handleReorder($event)"
+    @endif
 >
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between pr-2">
         <div
             @class([
                 'cursor-pointer' => $isCollapsible,
@@ -49,9 +53,22 @@
             @endif
         </div>
 
-        <div>
-            {{-- Add sort --}}
-        </div>
+        @if ($isReorderable)
+            <x-filament::icon
+                x-cloak
+                x-show="isReordering('{{ $section }}')"
+                icon="heroicon-o-x-mark"
+                class="h-5 w-5 pr-2 text-gray-500 dark:text-gray-400"
+                x-on:click="stopReordering('{{ $section }}')"
+            />
+            <x-filament::icon
+                x-cloak
+                x-show="! isReordering('{{ $section }}')"
+                icon="heroicon-o-bars-4"
+                class="h-5 w-5 pr-2 text-gray-500 dark:text-gray-400"
+                x-on:click="startReordering('{{ $section }}')"
+            />
+        @endif
     </div>
 
     <div
@@ -108,6 +125,9 @@
                             'flex h-10 rounded-lg px-2 transition duration-75',
                         ])
                 }}
+                @if ($isReorderable)
+                    x-sortable-item="$key"
+                @endif
             >
                 <button
                     class="flex items-center justify-start gap-x-1.5 py-1 text-sm font-normal outline-none"
@@ -146,53 +166,34 @@
                     </div>
                 </button>
 
-                @if ($hasActions)
-                    <div
-                        class="flex w-2/5 items-center justify-end gap-2 py-1"
-                        style="width: 30%"
-                    >
-                        @if ($isUserTableView && $tableView->isFavorite())
-                            @if ($tableView->isPublic())
-                                <x-filament::icon
-                                    :attributes="
-                                        \Filament\Support\prepare_inherited_attributes(
-                                            new ComponentAttributeBag([
-                                                'color' => 'gray',
-                                                'icon' => 'heroicon-o-eye',
-                                                'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.public'),
-                                            ])
-                                        )
-                                            ->class([
-                                                'h-5 w-5',
-                                            ])
-                                    "
-                                />
-                            @else
-                                <x-filament::icon-button
-                                    :attributes="
-                                        \Filament\Support\prepare_inherited_attributes(
-                                            new ComponentAttributeBag([
-                                                'color' => 'gray',
-                                                'icon' => 'heroicon-o-eye-slash',
-                                                'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.private'),
-                                            ])
-                                        )
-                                            ->class([
-                                                'h-5 w-5',
-                                            ])
-                                    "
-                                />
-                            @endif
-                        @endif
-
-                        @if ($tableView->isDefault())
+                <div
+                    class="flex w-2/5 items-center justify-end gap-2 py-1"
+                    style="width: 30%"
+                >
+                    @if ($isUserTableView && $tableView->isFavorite())
+                        @if ($tableView->isPublic())
                             <x-filament::icon
                                 :attributes="
                                     \Filament\Support\prepare_inherited_attributes(
                                         new ComponentAttributeBag([
                                             'color' => 'gray',
-                                            'icon' => 'heroicon-o-bookmark',
-                                            'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.default'),
+                                            'icon' => 'heroicon-o-eye',
+                                            'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.public'),
+                                        ])
+                                    )
+                                        ->class([
+                                            'h-5 w-5',
+                                        ])
+                                "
+                            />
+                        @else
+                            <x-filament::icon-button
+                                :attributes="
+                                    \Filament\Support\prepare_inherited_attributes(
+                                        new ComponentAttributeBag([
+                                            'color' => 'gray',
+                                            'icon' => 'heroicon-o-eye-slash',
+                                            'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.private'),
                                         ])
                                     )
                                         ->class([
@@ -201,12 +202,51 @@
                                 "
                             />
                         @endif
+                    @endif
 
+                    @if ($tableView->isDefault())
+                        <x-filament::icon
+                            :attributes="
+                                \Filament\Support\prepare_inherited_attributes(
+                                    new ComponentAttributeBag([
+                                        'color' => 'gray',
+                                        'icon' => 'heroicon-o-bookmark',
+                                        'title' => __('filament-table-views::toolbar.actions.manage-table-views.sections.default'),
+                                    ])
+                                )
+                                    ->class([
+                                        'h-5 w-5',
+                                    ])
+                            "
+                        />
+                    @endif
+
+                    @if ($isReorderable)
+                        @if ($hasActions)
+                            <div
+                                x-cloak
+                                x-show="! isReordering('{{ $section }}')"
+                            >
+                                @foreach ($actions as $action)
+                                    {{ $action }}
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div x-cloak x-show="isReordering('{{ $section }}')">
+                            <x-filament::icon
+                                icon="heroicon-o-chevron-up"
+                                class="h-5 w-5 text-gray-500 dark:text-gray-400"
+                                x-sortable-handle
+                                x-bind:class="isGroupCollapsed('{{ $section }}') && '-rotate-180'"
+                            />
+                        </div>
+                    @else
                         @foreach ($actions as $action)
                             {{ $action }}
                         @endforeach
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         @endforeach
     </div>

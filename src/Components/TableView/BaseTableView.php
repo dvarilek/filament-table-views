@@ -72,7 +72,7 @@ abstract class BaseTableView extends Component
         return $this;
     }
 
-    public function default(bool | Closure $condition): static
+    public function default(bool | Closure $condition = true): static
     {
         $this->isDefault = $condition;
 
