@@ -1,20 +1,16 @@
 @php
-    use Filament\Support\Enums\MaxWidth;
+    use Dvarilek\FilamentTableViews\Enums\TableViewTypeEnum;
     use Illuminate\View\ComponentAttributeBag;
 @endphp
 
 @props([
     'livewireId',
-    'systemTableViews',
-    'favoriteUserTableViews',
-    'privateUserTableViews',
-    'publicUserTableViews',
+    'tableViews',
+    'tableViewGroupOrder',
     'activeTableViewKey',
     'heading',
-    'favoriteSectionHeading',
-    'privateSectionHeading',
-    'publicSectionHeading',
-    'systemSectionHeading',
+    'getGroupHeadingUsing',
+    'getFilterLabelUsing',
     'isSearchable',
     'searchDebounce' => '500ms',
     'searchOnBlur' => false,
@@ -23,10 +19,6 @@
     'emptyStatePlaceholder',
     'hasFilterButtons',
     'activeFilters',
-    'favoriteFilterLabel',
-    'privateFilterLabel',
-    'publicFilterLabel',
-    'systemFilterLabel',
     'resetLabel',
     'systemTableViewActions',
     'userTableViewActions',
@@ -35,17 +27,19 @@
 ])
 
 @php
-    $hasSystemTableViews = filled($systemTableViews);
-    $canRenderSystemTableViews = $hasSystemTableViews && (! $hasFilterButtons || $activeFilters['system']);
+    // TODO: Ensure the filter buttons get applied actually
+    $hasTableViews = fn (TableViewTypeEnum $group) => filled($tableViews->get($group->value));
+    $canRenderTableViewGroup = fn (TableViewTypeEnum $group) => $hasTableViews($group) && (! $hasFilterButtons || $activeFilters[$group->value]);
 
-    $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
-    $canRenderFavoriteUserTableViews = $hasFavoriteUserTableViews && (! $hasFilterButtons || $activeFilters['favorite']);
+    $unfilteredTableViewGroups = collect(TableViewTypeEnum::cases())
+       ->sortBy(
+           $tableViewGroupOrder instanceof Closure ?
+                $tableViewGroupOrder :
+                fn (TableViewTypeEnum $group) => array_search($group, $tableViewGroupOrder, true)
+       )
+       ->values();
 
-    $hasPublicUserTableViews = filled($publicUserTableViews);
-    $canRenderPublicUserTableViews = $hasPublicUserTableViews && (! $hasFilterButtons || $activeFilters['public']);
-
-    $hasPrivateUserTableViews = filled($privateUserTableViews);
-    $canRenderPrivateUserTableViews = $hasPrivateUserTableViews && (! $hasFilterButtons || $activeFilters['private']);
+    $tableViewGroups = $unfilteredTableViewGroups->filter(fn(TableViewTypeEnum $group) => $tableViews->has($group->value));
 @endphp
 
 <div class="flex flex-1 flex-col">
@@ -126,221 +120,107 @@
 
         @if ($hasFilterButtons)
             <div class="flex flex-wrap gap-x-4 gap-y-2">
-                <x-filament::badge
-                    :attributes="
-                        \Filament\Support\prepare_inherited_attributes(
-                            new Illuminate\View\ComponentAttributeBag([
-                                'size' => 'sm',
-                                'wire:loading.attr' => 'disabled',
-                                'wire:click' => 'toggleViewManagerFilterButton(\'favorite\')',
-                                'disabled' => ! $hasFavoriteUserTableViews,
-                                'color' => $canRenderFavoriteUserTableViews ? 'primary' : 'gray',
-                                'icon' => $canRenderFavoriteUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
-                            ])
-                        )
+                @foreach($unfilteredTableViewGroups as $group)
+                    <x-filament::badge
+                        :attributes="
+                            \Filament\Support\prepare_inherited_attributes(
+                                new Illuminate\View\ComponentAttributeBag([
+                                    'size' => 'sm',
+                                    'wire:loading.attr' => 'disabled',
+                                    'wire:click' => 'toggleViewManagerFilterButton(\'' . $group->value . '\')',
+                                    'disabled' => ! $hasTableViews($group),
+                                    'color' => $canRenderTableViewGroup($group) ? 'primary' : 'gray',
+                                    'icon' => $canRenderTableViewGroup($group) ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
+                                ])
+                            )
                             ->class([
                                 'relative cursor-pointer select-none',
                             ])
-                    "
-                >
-                    {{ $favoriteFilterLabel }}
+                        "
+                    >
+                        {{ $getFilterLabelUsing($group) }}
 
-                    @if ($favoriteUserTableViewsCount = count($favoriteUserTableViews))
-                        <span
-                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
-                        >
-                            {{ $favoriteUserTableViewsCount > 99 ? '99+' : $favoriteUserTableViewsCount }}
+                        @if ($tableViewCount = ($tableViews->get($group->value)?->count()))
+                            <span
+                                class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                            >
+                            {{ $tableViewCount > 99 ? '99+' : $tableViewCount }}
                         </span>
-                    @endif
-                </x-filament::badge>
-
-                <x-filament::badge
-                    :attributes="
-                        \Filament\Support\prepare_inherited_attributes(
-                            new Illuminate\View\ComponentAttributeBag([
-                                'size' => 'sm',
-                                'wire:loading.attr' => 'disabled',
-                                'wire:click' => 'toggleViewManagerFilterButton(\'private\')',
-                                'disabled' => ! $hasPrivateUserTableViews,
-                                'color' => $canRenderPrivateUserTableViews ? 'primary' : 'gray',
-                                'icon' => $canRenderPrivateUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
-                            ])
-                        )
-                            ->class([
-                                'relative cursor-pointer select-none',
-                            ])
-                    "
-                >
-                    {{ $privateFilterLabel }}
-
-                    @if ($privateUserTableViewsCount = count($privateUserTableViews))
-                        <span
-                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
-                        >
-                            {{ $privateUserTableViewsCount > 99 ? '99+' : $privateUserTableViewsCount }}
-                        </span>
-                    @endif
-                </x-filament::badge>
-
-                <x-filament::badge
-                    :attributes="
-                        \Filament\Support\prepare_inherited_attributes(
-                            new Illuminate\View\ComponentAttributeBag([
-                                'size' => 'sm',
-                                'wire:loading.attr' => 'disabled',
-                                'wire:click' => 'toggleViewManagerFilterButton(\'public\')',
-                                'disabled' => ! $hasPublicUserTableViews,
-                                'color' => $canRenderPublicUserTableViews ? 'primary' : 'gray',
-                                'icon' => $canRenderPublicUserTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
-                            ])
-                        )
-                            ->class([
-                                'relative cursor-pointer select-none',
-                            ])
-                    "
-                >
-                    {{ $publicFilterLabel }}
-
-                    @if ($publicUserTableViewsCount = count($publicUserTableViews))
-                        <span
-                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
-                        >
-                            {{ $publicUserTableViewsCount > 99 ? '99+' : $publicUserTableViewsCount }}
-                        </span>
-                    @endif
-                </x-filament::badge>
-
-                <x-filament::badge
-                    :attributes="
-                        \Filament\Support\prepare_inherited_attributes(
-                            new Illuminate\View\ComponentAttributeBag([
-                                'size' => 'sm',
-                                'wire:loading.attr' => 'disabled',
-                                'wire:click' => 'toggleViewManagerFilterButton(\'system\')',
-                                'disabled' => ! $hasSystemTableViews,
-                                'color' => $canRenderSystemTableViews ? 'primary' : 'gray',
-                                'icon' => $canRenderSystemTableViews ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
-                            ])
-                        )
-                            ->class([
-                                'relative cursor-pointer select-none',
-                            ])
-                    "
-                >
-                    {{ $systemFilterLabel }}
-
-                    @if ($systemTableViewsCount = count($systemTableViews))
-                        <span
-                            class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
-                        >
-                            {{ $systemTableViewsCount > 99 ? '99+' : $systemTableViewsCount }}
-                        </span>
-                    @endif
-                </x-filament::badge>
+                        @endif
+                    </x-filament::badge>
+                @endforeach
             </div>
         @endif
     </div>
-    <script
-        defer
-        src="https://cdn.jsdelivr.net/npm/@alpinejs/sort@3.x.x/dist/cdn.min.js"
-    ></script>
 
-    @if ($canRenderFavoriteUserTableViews || $canRenderPublicUserTableViews || $canRenderPrivateUserTableViews || $canRenderSystemTableViews)
+    @if ($canRenderTableViewGroup(TableViewTypeEnum::FAVORITE) || $canRenderTableViewGroup(TableViewTypeEnum::PRIVATE) || $canRenderTableViewGroup(TableViewTypeEnum::PUBLIC) || $canRenderTableViewGroup(TableViewTypeEnum::SYSTEM))
         <div
             class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
             @if ($isCollapsible || $isReorderable)
                 x-data="{
-                                @if ($isCollapsible)
-             collapsedGroups: [],
+                    collapsedGroups: [],
 
-                                    toggleCollapsedGroup: function (group) {
-                                        if (this.isGroupCollapsed(group)) {
-                                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
+                    reorderingGroup: null,
 
-                                            return
-                                        }
+                    isReorderingDeferred: false,
 
-                                        this.collapsedGroups.push(group)
-                                    },
+                    pendingNewOrder: [],
 
-                                    isGroupCollapsed: function (group) {
-                                        return this.collapsedGroups.includes(group)
-                                    }, @endif
+                    toggleCollapsedGroup: function (group) {
+                        if (this.isGroupCollapsed(group)) {
+                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
 
+                            return
+                        }
 
-                                @if ($isReorderable)
-             reorderingGroup: null,
+                        this.collapsedGroups.push(group)
+                    },
 
-                                    startReordering: function (group) {
-                                        this.reorderingGroup = group
-                                    },
+                    isGroupCollapsed: function (group) {
+                        return this.collapsedGroups.includes(group)
+                    },
 
-                                    stopReordering: function () {
-                                        this.reorderingGroup = null
-                                    },
+                    startReordering: function (group) {
+                        this.reorderingGroup = group
+                    },
 
-                                    isReordering: function (group) {
-                                        return this.reorderingGroup === group
-                                    },
+                    stopReordering: function () {
+                        this.reorderingGroup = null
+                    },
 
-                                    handleReorder: function (event) {
-                                        console.log(event)
-                                    }, @endif
+                    isReordering: function (group) {
+                        return this.reorderingGroup === group
+                    },
 
-                            }"
+                    handleGroupReorder: function (group, event) {
+                        const newOrder = event.target.sortable.toArray()
+
+                        if (this.isReorderingDeferred) {
+                            this.pendingNewOrder = newOrder
+
+                            return
+                        }
+
+                        $wire.reorderTableViewManagerTableViews(group, newOrder)
+                    },
+                }"
             @endif
         >
-            @if ($canRenderFavoriteUserTableViews)
-                <x-filament-table-views::manager.table-view-section
-                    section="favorite"
-                    :livewireId="$livewireId"
-                    :sectionHeading="$favoriteSectionHeading"
-                    :tableViews="$favoriteUserTableViews"
-                    :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userTableViewActions"
-                    :isCollapsible="$isCollapsible"
-                    :isReorderable="$isReorderable"
-                />
-            @endif
-
-            @if ($canRenderPrivateUserTableViews)
-                <x-filament-table-views::manager.table-view-section
-                    section="private"
-                    :livewireId="$livewireId"
-                    :sectionHeading="$privateSectionHeading"
-                    :tableViews="$privateUserTableViews"
-                    :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userTableViewActions"
-                    :isCollapsible="$isCollapsible"
-                    :isReorderable="$isReorderable"
-                />
-            @endif
-
-            @if ($canRenderPublicUserTableViews)
-                <x-filament-table-views::manager.table-view-section
-                    section="public"
-                    :livewireId="$livewireId"
-                    :sectionHeading="$publicSectionHeading"
-                    :tableViews="$publicUserTableViews"
-                    :activeTableViewKey="$activeTableViewKey"
-                    :actions="$userTableViewActions"
-                    :isCollapsible="$isCollapsible"
-                    :isReorderable="$isReorderable"
-                />
-            @endif
-
-            @if ($canRenderSystemTableViews)
-                <x-filament-table-views::manager.table-view-section
-                    section="system"
-                    :livewireId="$livewireId"
-                    :sectionHeading="$systemSectionHeading"
-                    :tableViews="$systemTableViews"
-                    :activeTableViewKey="$activeTableViewKey"
-                    :actions="$systemTableViewActions"
-                    :isCollapsible="$isCollapsible"
-                />
-            @endif
+            @foreach ($tableViewGroups as $group)
+                @if ($canRenderTableViewGroup($group))
+                    <x-filament-table-views::manager.table-view-group
+                        :group="$group"
+                        :livewireId="$livewireId"
+                        :groupHeading="$getGroupHeadingUsing($group)"
+                        :tableViews="$tableViews->get($group->value, collect())"
+                        :activeTableViewKey="$activeTableViewKey"
+                        :actions="$group !== TableViewTypeEnum::SYSTEM ? $userTableViewActions : $systemTableViewActions"
+                        :isCollapsible="$isCollapsible"
+                        :isReorderable="$group !== TableViewTypeEnum::SYSTEM ? $isReorderable : false"
+                    />
+                @endif
+            @endforeach
         </div>
     @else
         <div class="mx-auto grid max-w-lg justify-items-center text-center">

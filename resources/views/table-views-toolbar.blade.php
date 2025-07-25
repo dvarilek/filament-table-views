@@ -1,6 +1,6 @@
 @php
-    use Dvarilek\FilamentTableViews\Components\TableView\TableView;
     use Dvarilek\FilamentTableViews\Components\TableView\UserView;
+    use Dvarilek\FilamentTableViews\Enums\TableViewTypeEnum;
     use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
 @endphp
 
@@ -8,23 +8,12 @@
     @php
         $livewireId = $this->getId();
 
-        $systemTableViews = array_filter(
-            $this->getSystemTableViews(),
-            static fn (TableView $tableView) => $tableView->isVisible()
-        );
+        $tableViews = $this->getAllTableViews(shouldGroupByTableViewType: true);
 
-        $userTableViews = array_filter(
-            $this->userTableViews,
-            static fn (UserView $tableView) => $tableView->isVisible()
-        );
-
-        [$favoriteUserTableViews, $nonFavoriteUserTableViews] = collect($userTableViews)
-            ->partition(static fn (UserView $tableView) => $tableView->isFavorite())
-            ->toArray();
-
-        [$publicUserTableViews, $privateUserTableViews] = collect($nonFavoriteUserTableViews)
-            ->partition(static fn (UserView $tableView) => $tableView->isPublic())
-            ->toArray();
+        $systemTableViews = $tableViews->get(TableViewTypeEnum::SYSTEM->value, collect());
+        $favoriteUserTableViews = $tableViews->get(TableViewTypeEnum::FAVORITE->value, collect());
+        $publicUserTableViews = $tableViews->get(TableViewTypeEnum::PUBLIC->value, collect());
+        $privateUserTableViews = $tableViews->get(TableViewTypeEnum::PRIVATE->value, collect());
 
         $hasSystemTableViews = filled($systemTableViews);
         $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
@@ -93,18 +82,15 @@
                     {{ $this->manageTableViewsAction }}
                 </x-slot>
 
+                {{-- the manager should be refactored into a view component - this way the usings can be handled more nicely --}}
                 <x-filament-table-views::manager
                     :livewireId="$livewireId"
-                    :systemTableViews="$this->filterTableViewManagerItems($systemTableViews)"
-                    :favoriteUserTableViews="$this->filterTableViewManagerItems($favoriteUserTableViews)"
-                    :privateUserTableViews="$this->filterTableViewManagerItems($privateUserTableViews)"
-                    :publicUserTableViews="$this->filterTableViewManagerItems($publicUserTableViews)"
+                    :tableViews="$this->filterTableViewManagerItems($tableViews)"
+                    :tableViewGroupOrder="$this->getTableViewManagerGroupOrder()"
                     :activeTableViewKey="$activeTableViewKey"
-                    :heading="$this->getTableViewmanagerHeading()"
-                    :favoriteSectionHeading="$this->getTableViewManagerFavoriteSectionHeading()"
-                    :privateSectionHeading="$this->getTableViewManagerPrivateSectionHeading()"
-                    :publicSectionHeading="$this->getTableViewManagerPublicSectionHeading()"
-                    :systemSectionHeading="$this->getTableViewManagerSystemSectionHeading()"
+                    :heading="$this->getTableViewManagerHeading()"
+                    :getGroupHeadingUsing="fn (TableViewTypeEnum $group) => $this->getTableViewManagerGroupHeading($group)"
+                    :getFilterLabelUsing="fn (TableViewTypeEnum $group) => $this->getTableViewManagerFilterLabel($group)"
                     :isSearchable="$this->hasTableViewManagerSearch()"
                     :searchDebounce="$this->getTableViewManagerSearchDebounce()"
                     :searchOnBlur="$this->getTableViewManagerSearchOnBlur()"
@@ -113,10 +99,6 @@
                     :emptyStatePlaceholder="$this->getTableViewManagerEmptyStatePlaceholder()"
                     :hasFilterButtons="$this->hasTableViewManagerFilterButtons()"
                     :activeFilters="$this->tableViewManagerActiveFilters"
-                    :favoriteFilterLabel="$this->getTableViewManagerFavoriteFilterLabel()"
-                    :privateFilterLabel="$this->getTableViewManagerPrivateFilterLabel()"
-                    :publicFilterLabel="$this->getTableViewManagerPublicFilterLabel()"
-                    :systemFilterLabel="$this->getTableViewManagerSystemFilterLabel()"
                     :resetLabel="$this->getTableViewManagerResetLabel()"
                     :systemTableViewActions="$this->getTableViewManagerSystemActions()"
                     :userTableViewActions="$this->getTableViewManagerUserActions()"

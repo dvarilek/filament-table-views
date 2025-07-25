@@ -74,7 +74,7 @@ return [
 
             ],
 
-            'sections' => [
+            'groups' => [
 
                 'favorite' => 'Oblíbené',
 

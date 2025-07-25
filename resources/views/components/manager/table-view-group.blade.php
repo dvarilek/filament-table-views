@@ -1,7 +1,7 @@
 @props([
-    'section',
+    'group',
     'livewireId',
-    'sectionHeading',
+    'groupHeading',
     'tableViews',
     'activeTableViewKey',
     'actions',
@@ -14,33 +14,26 @@
     use Filament\Actions\Action;
     use Filament\Actions\ActionGroup;
     use Illuminate\View\ComponentAttributeBag;
+
+    $groupValue = $group->value;
 @endphp
 
-<div
-    class="space-y-2"
-    @if ($isCollapsible)
-        x-bind:aria-expanded="! isGroupCollapsed(@js($section))"
-        aria-expanded="true"
-    @endif
-    @if ($isReorderable)
-        x-sortable="handleReorder($event)"
-    @endif
->
-    <div class="flex items-center justify-between pr-2">
+<div class="space-y-2">
+    <div class="flex items-center justify-between">
         <div
             @class([
                 'cursor-pointer' => $isCollapsible,
                 'flex items-center gap-x-2',
             ])
             @if ($isCollapsible)
-                x-on:click="toggleCollapsedGroup(@js($section))"
+                x-on:click="toggleCollapsedGroup(@js($groupValue))"
             @endif
         >
-            @if ($sectionHeading)
+            @if ($groupHeading)
                 <h5
                     class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
                 >
-                    {{ $sectionHeading }}
+                    {{ $groupHeading }}
                 </h5>
             @endif
 
@@ -48,34 +41,42 @@
                 <x-filament::icon
                     icon="heroicon-o-chevron-up"
                     class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                    x-bind:class="isGroupCollapsed('{{ $section }}') && '-rotate-180'"
+                    x-bind:class="isGroupCollapsed('{{ $groupValue }}') && '-rotate-180'"
                 />
             @endif
         </div>
 
         @if ($isReorderable)
-            <x-filament::icon
-                x-cloak
-                x-show="isReordering('{{ $section }}')"
-                icon="heroicon-o-x-mark"
-                class="h-5 w-5 pr-2 text-gray-500 dark:text-gray-400"
-                x-on:click="stopReordering('{{ $section }}')"
-            />
-            <x-filament::icon
-                x-cloak
-                x-show="! isReordering('{{ $section }}')"
-                icon="heroicon-o-bars-4"
-                class="h-5 w-5 pr-2 text-gray-500 dark:text-gray-400"
-                x-on:click="startReordering('{{ $section }}')"
-            />
+            <div style="padding-right: 0.5rem">
+                <x-filament::icon
+                    x-cloak
+                    x-show="isReordering('{{ $groupValue }}')"
+                    icon="heroicon-o-x-mark"
+                    class="h-5 w-5 text-gray-500 dark:text-gray-400"
+                    x-on:click="stopReordering('{{ $groupValue }}')"
+                />
+                <x-filament::icon
+                    x-cloak
+                    x-show="! isReordering('{{ $groupValue }}')"
+                    icon="heroicon-o-arrows-up-down"
+                    class="h-5 w-5 text-gray-500 dark:text-gray-400"
+                    x-on:click="startReordering('{{ $groupValue }}')"
+                />
+            </div>
         @endif
     </div>
 
     <div
         class="space-y-1"
         @if ($isCollapsible)
-            x-show="! isGroupCollapsed(@js($section))"
+            x-show="! isGroupCollapsed(@js($groupValue))"
+            x-bind:aria-expanded="! isGroupCollapsed(@js($groupValue))"
+            aria-expanded="true"
             x-transition
+        @endif
+        @if ($isReorderable)
+            x-sortable
+            x-on:end.stop="handleGroupReorder(@js($groupValue), $event)"
         @endif
     >
         @foreach ($tableViews as $key => $tableView)
@@ -115,7 +116,7 @@
                     $attributes
                         ->merge([
                             'disabled' => $isDisabled,
-                            'wire:key' => 'filament-table-views-manager-' . $section . '-view-' . $key . '-' . $livewireId,
+                            'wire:key' => 'filament-table-views-manager-' . $groupValue . '-view-' . $key . '-' . $livewireId,
                         ], false)
                         ->class([
                             'bg-gray-50 dark:bg-white/5' => $isActive,
@@ -126,7 +127,8 @@
                         ])
                 }}
                 @if ($isReorderable)
-                    x-sortable-item="$key"
+                    x-sortable-item="{{ $key }}"
+                    x-bind:x-sortable-handle="isReordering('{{ $groupValue }}')"
                 @endif
             >
                 <button
@@ -225,7 +227,7 @@
                         @if ($hasActions)
                             <div
                                 x-cloak
-                                x-show="! isReordering('{{ $section }}')"
+                                x-show="! isReordering('{{ $groupValue }}')"
                             >
                                 @foreach ($actions as $action)
                                     {{ $action }}
@@ -233,12 +235,10 @@
                             </div>
                         @endif
 
-                        <div x-cloak x-show="isReordering('{{ $section }}')">
+                        <div x-cloak x-show="isReordering('{{ $groupValue }}')">
                             <x-filament::icon
-                                icon="heroicon-o-chevron-up"
+                                icon="heroicon-o-bars-2"
                                 class="h-5 w-5 text-gray-500 dark:text-gray-400"
-                                x-sortable-handle
-                                x-bind:class="isGroupCollapsed('{{ $section }}') && '-rotate-180'"
                             />
                         </div>
                     @else
