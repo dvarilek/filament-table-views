@@ -14,11 +14,12 @@ use Dvarilek\FilamentTableViews\Components\Actions\TogglePublicTableViewAction;
 use Dvarilek\FilamentTableViews\Components\TableView\BaseTableView;
 use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Components\TableView\UserView;
-use Dvarilek\FilamentTableViews\Enums\TableViewTypeEnum;
+use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
 use Exception;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,14 +39,14 @@ trait HasTableViews
     public string $tableViewManagerSearch = '';
 
     /**
-     * @var array<value-of<TableViewTypeEnum>, bool>
+     * @var array<value-of<TableViewGroupEnum>, bool>
      */
     #[Locked]
     public array $tableViewManagerActiveFilters = [
-        TableViewTypeEnum::SYSTEM->value => true,
-        TableViewTypeEnum::FAVORITE->value => true,
-        TableViewTypeEnum::PUBLIC->value => true,
-        TableViewTypeEnum::PRIVATE->value => true,
+        TableViewGroupEnum::SYSTEM->value => true,
+        TableViewGroupEnum::FAVORITE->value => true,
+        TableViewGroupEnum::PUBLIC->value => true,
+        TableViewGroupEnum::PRIVATE->value => true,
     ];
 
     #[Url(as: 'tableView')]
@@ -98,6 +99,16 @@ trait HasTableViews
         return true;
     }
 
+    public function isTableViewManagerDeferredReorderable(): bool
+    {
+        return true;
+    }
+
+    public function isTableViewManagerMultiGroupReorderable(): bool
+    {
+        return true;
+    }
+
     public function getTableViewManagerSearchDebounce(): string
     {
         return '500ms';
@@ -118,24 +129,44 @@ trait HasTableViews
         return MaxWidth::Small;
     }
 
-    public function getTableViewManagerGroupHeading(TableViewTypeEnum $group): string
+    public function getTableViewManagerGroupHeading(TableViewGroupEnum $group): string
     {
         return match ($group) {
-            TableViewTypeEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.groups.favorite'),
-            TableViewTypeEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.groups.private'),
-            TableViewTypeEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.groups.public'),
-            TableViewTypeEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.groups.system')
+            TableViewGroupEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.groups.favorite'),
+            TableViewGroupEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.groups.private'),
+            TableViewGroupEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.groups.public'),
+            TableViewGroupEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.groups.system')
         };
     }
 
-    public function getTableViewManagerFilterLabel(TableViewTypeEnum $group): string
+    public function getTableViewManagerFilterLabel(TableViewGroupEnum $group): string
     {
         return match ($group) {
-            TableViewTypeEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.filters.favorite'),
-            TableViewTypeEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.filters.private'),
-            TableViewTypeEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.filters.public'),
-            TableViewTypeEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.filters.system')
+            TableViewGroupEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.filters.favorite'),
+            TableViewGroupEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.filters.private'),
+            TableViewGroupEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.filters.public'),
+            TableViewGroupEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.filters.system')
         };
+    }
+
+    public function getTableViewManagerFilterColor(TableViewGroupEnum $group, bool $isActive): string
+    {
+        return $isActive ? 'primary' : 'gray';
+    }
+
+    public function getTableViewManagerFilterIcon(TableViewGroupEnum $group, bool $isActive): string
+    {
+        return $isActive ? 'heroicon-o-eye' : 'heroicon-o-eye-slash';
+    }
+
+    /**
+     * @return list<TableViewGroupEnum>
+     */
+    public function getTableViewManagerDefaultCollapsedGroups(): array
+    {
+        return [
+
+        ];
     }
 
     public function getTableViewManagerEmptyStatePlaceholder(): ?string
@@ -156,21 +187,21 @@ trait HasTableViews
     }
 
     /**
-     * @return list<TableViewTypeEnum> | Closure(TableViewTypeEnum): int
+     * @return list<TableViewGroupEnum> | Closure(TableViewGroupEnum): int
      */
     public function getTableViewManagerGroupOrder(): array | Closure
     {
         return [
-            TableViewTypeEnum::FAVORITE,
-            TableViewTypeEnum::PRIVATE,
-            TableViewTypeEnum::PUBLIC,
-            TableViewTypeEnum::SYSTEM
+            TableViewGroupEnum::FAVORITE,
+            TableViewGroupEnum::PRIVATE,
+            TableViewGroupEnum::PUBLIC,
+            TableViewGroupEnum::SYSTEM,
         ];
     }
 
-    public function toggleViewManagerFilterButton(TableViewTypeEnum $filterButton): void
+    public function toggleViewManagerFilterButton(TableViewGroupEnum $group): void
     {
-        $this->tableViewManagerActiveFilters[$filterButton->value] = ! $this->tableViewManagerActiveFilters[$filterButton->value];
+        $this->tableViewManagerActiveFilters[$group->value] = ! $this->tableViewManagerActiveFilters[$group->value];
     }
 
     public function resetTableViewManager(): void
@@ -178,26 +209,20 @@ trait HasTableViews
         $this->tableViewManagerSearch = '';
 
         $this->tableViewManagerActiveFilters = [
-            TableViewTypeEnum::SYSTEM->value => true,
-            TableViewTypeEnum::FAVORITE->value => true,
-            TableViewTypeEnum::PUBLIC->value => true,
-            TableViewTypeEnum::PRIVATE->value => true,
+            TableViewGroupEnum::SYSTEM->value => true,
+            TableViewGroupEnum::FAVORITE->value => true,
+            TableViewGroupEnum::PUBLIC->value => true,
+            TableViewGroupEnum::PRIVATE->value => true,
         ];
     }
 
-    public function reorderTableViewManagerTableViews(mixed $group, array $order): void
+    public function reorderTableViewsInGroup(TableViewGroupEnum $group, array $order): void
     {
         if (! $this->isTableViewManagerReorderable()) {
             return;
         }
 
-        if ($group === null) {
-            return;
-        }
-
-        $group = TableViewTypeEnum::tryFrom($group);
-
-        if ($group === null) {
+        if (! count($order)) {
             return;
         }
 
@@ -207,32 +232,166 @@ trait HasTableViews
             return;
         }
 
-        $tableViews = $this->groupTableViewsByType($this->userTableViews)
-            ->get($group->value, collect());
-
-        if (! $tableViews->count()) {
-            return;
-        }
-
-        DB::transaction(function () use ($tableViews, $order, $user): void {
+        DB::transaction(function () use ($user, $order, $group) {
             $configRelation = $user->tableViewConfigs();
 
             $configModel = $configRelation->getRelated();
             $configModelKeyName = $configModel->getKeyName();
             $wrappedModelKeyName = $configModel->getConnection()?->getQueryGrammar()?->wrap($configModelKeyName) ?? $configModelKeyName;
 
+            $savedTableViewForeignKeyName = $configModel->tableView()->getForeignKeyName();
+
+            $groupTableViewKeys = $this->groupTableViewsByType(collect($this->userTableViews))
+                ->get($group->value, collect())
+                ->reduce(function (array $carry, UserView $userView) use ($order) {
+                    $key = $userView->getTableView()->getKey();
+
+                    if (in_array($key, $order)) {
+                        $carry[] = $key;
+                    }
+
+                    return $carry;
+                }, []);
+
+            if (empty($groupTableViewKeys)) {
+                return;
+            }
+
             $configRelation
-                ->whereIn('saved_table_view_id', $tableViews->pluck($tableViews->first()->getKeyName()))
+                ->whereIn($savedTableViewForeignKeyName, array_values($order))
                 ->update([
                     'order' => DB::raw(
                         'case ' . collect($order)
                             ->map(fn ($recordKey, int $recordIndex): string => 'when ' . $wrappedModelKeyName . ' = ' . DB::getPdo()->quote($recordKey) . ' then ' . ($recordIndex + 1))
                             ->implode(' ') . ' end'
-                    )
+                    ),
                 ]);
         });
 
         unset($this->userTableViews);
+        $this->getTableViewsInGroupReorderedSuccessNotification()?->send();
+    }
+
+    // TODO:
+    //      Add isReorderable for individual records (maybe even groups)
+    //      Add isCollapsible for individual groups
+    //      Make other groups visible even if they are empty
+    //      Add tracking for updated table views
+
+    // TODO: Finish this, it currently isn't possible to drag from one group to another when there aren't any views in the other - this should be addressed for multiGroupReorderable
+    //       Add isGroupReorderable and isGroupCollapsible with the group being passed into there
+
+    public function reorderTableViewsInGroups(array $groupedTableViewOrders): void
+    {
+        if (! $this->isTableViewManagerReorderable() && ! $this->isTableViewManagerMultiGroupReorderable()) {
+            return;
+        }
+
+        if (! $user = auth()->user()) {
+            return;
+        }
+
+        DB::transaction(function () use ($user, $groupedTableViewOrders) {
+            $configRelation = $user->tableViewConfigs();
+
+            $configModel = $configRelation->getRelated();
+            $configModelKeyName = $configModel->getKeyName();
+            $wrappedModelKeyName = $configModel->getConnection()?->getQueryGrammar()?->wrap($configModelKeyName) ?? $configModelKeyName;
+
+            $savedTableViewRelation = $configModel->tableView();
+            $savedTableViewModelForeignKeyName = $savedTableViewRelation->getForeignKeyName();
+
+            $savedTableViewModel = $savedTableViewRelation->getRelated();
+            $savedTableViewModelKeyName = $savedTableViewModel->getKeyName();
+
+            $userTableViews = collect($this->userTableViews);
+            $groupedUserTableViews = $this->groupTableViewsByType($userTableViews);
+
+            foreach ($groupedTableViewOrders as $group => $order) {
+                $group = TableViewGroupEnum::tryFrom($group);
+
+                if (! $group || $group === TableViewGroupEnum::SYSTEM) {
+                    continue;
+                }
+
+                if (empty($order)) {
+                    continue;
+                }
+
+                $authorizationMethod = match ($group) {
+                    TableViewGroupEnum::FAVORITE => 'toggleFavorite',
+                    TableViewGroupEnum::PUBLIC => 'togglePublic',
+                    TableViewGroupEnum::PRIVATE => 'togglePrivate',
+                };
+
+                /* @var list<mixed> $originalTableViewKeys */
+                $originalTableViewKeys = $groupedUserTableViews
+                    ->get($group->value, collect())
+                    ->map(fn (UserView $userView) => $userView->getTableView()->getKey())
+                    ->toArray();
+
+                $authorizedTableViewKeysForUpdate = $userTableViews
+                    ->reduce(function (array $carry, UserView $userView) use ($order, $originalTableViewKeys) {
+                        $tableViewKey = $userView->getTableView()->getKey();
+
+                        if (! in_array($tableViewKey, $order) || in_array($tableViewKey, $originalTableViewKeys)) {
+                            return $carry;
+                        }
+
+                        // TODO: Add authorization check here once its actually implemented
+                        // if (!$this->authorizeForUser($user, $authorizationMethod, $userView->getTableView())->allowed()) {
+                        //     return $carry;
+                        // }
+
+                        $carry[] = $tableViewKey;
+
+                        return $carry;
+                    }, []);
+
+                if (! empty($authorizedTableViewKeysForUpdate)) {
+                    $authorizedRecordsForUpdate = $configRelation
+                        ->clone()
+                        ->whereIn($savedTableViewModelForeignKeyName, array_values($authorizedTableViewKeysForUpdate));
+
+                    if ($group === TableViewGroupEnum::FAVORITE) {
+                        $authorizedRecordsForUpdate->update([
+                            'is_favorite' => true,
+                        ]);
+                    } else {
+                        $authorizedRecordsForUpdate->update([
+                            'is_favorite' => false,
+                        ]);
+
+                        $savedTableViewModel
+                            ->whereIn($savedTableViewModelKeyName, array_values($authorizedTableViewKeysForUpdate))
+                            ->update([
+                                'is_public' => $group === TableViewGroupEnum::PUBLIC,
+                            ]);
+                    }
+                }
+
+                $configRelation
+                    ->clone()
+                    ->whereIn($savedTableViewModelForeignKeyName, array_values($order))
+                    ->update([
+                        'order' => DB::raw(
+                            'case ' . collect($order)
+                                ->map(fn ($recordKey, int $recordIndex): string => 'when ' . $wrappedModelKeyName . ' = ' . DB::getPdo()->quote($recordKey) . ' then ' . ($recordIndex + 1))
+                                ->implode(' ') . ' end'
+                        ),
+                    ]);
+            }
+        });
+
+        unset($this->userTableViews);
+        $this->getTableViewsInGroupReorderedSuccessNotification()?->send();
+    }
+
+    protected function getTableViewsInGroupReorderedSuccessNotification(): ?Notification
+    {
+        return Notification::make('tableViewsInGroupReorderedSuccessNotification')
+            ->success()
+            ->title(__('filament-table-views::toolbar.actions.manage-table-views.reordering.reordered_notification_title'));
     }
 
     public function manageTableViewsAction(): Action
@@ -329,7 +488,7 @@ trait HasTableViews
                 $key = $tableView->getLabel();
 
                 if ($key === null) {
-                    throw new Exception("Table view must have a label set.");
+                    throw new Exception('Table view must have a label set.');
                 }
 
                 return [
@@ -356,10 +515,16 @@ trait HasTableViews
             ->whereMorphedTo('owner', $user)
             ->where('model_type', static::getTableViewModelType())
             ->get()
-            ->sortByDesc(function (SavedTableView $tableView) {
+            ->sortBy(function (SavedTableView $tableView) {
                 $config = $tableView->getCurrentAuthenticatedUserTableViewConfig();
 
-                return $config && $config->order ? $config->order : $tableView->{$tableView->getCreatedAtColumn()};
+                if ($config?->order) {
+                    return $config->order;
+                }
+
+                // Not ideal, but it's better than introducing some arbitrary value or executing an additional query
+                // in attempt to get the max count for the given user.
+                return PHP_INT_MAX - $tableView->{$tableView->getCreatedAtColumn()}->timestamp;
             })
             ->mapWithKeys(static fn (SavedTableView $tableView): array => [
                 (string) $tableView->getKey() => UserView::make($tableView),
@@ -368,8 +533,7 @@ trait HasTableViews
     }
 
     /**
-     * @param  bool $shouldGroupByTableViewType
-     * @return ($shouldGroupByTableViewType is true ? Collection<value-of<TableViewTypeEnum>, Collection<string, BaseTableView>> : Collection<string, BaseTableView>)
+     * @return ($shouldGroupByTableViewType is true ? Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>> : Collection<string, BaseTableView>)
      */
     protected function getAllTableViews(bool $shouldGroupByTableViewType = false): Collection
     {
@@ -380,29 +544,29 @@ trait HasTableViews
     }
 
     /**
-     * @param  Collection<string, BaseTableView> $tableViews
-     * @return Collection<value-of<TableViewTypeEnum>, Collection<string, BaseTableView>>
+     * @param  Collection<string, BaseTableView>  $tableViews
+     * @return Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>
      */
     protected function groupTableViewsByType(Collection $tableViews): Collection
     {
         return $tableViews
             ->groupBy(fn (TableView | UserView $tableView): string => match (true) {
-                $tableView instanceof TableView => TableViewTypeEnum::SYSTEM->value,
-                $tableView->isFavorite() => TableViewTypeEnum::FAVORITE->value,
-                $tableView->isPublic() => TableViewTypeEnum::PUBLIC->value,
-                default => TableViewTypeEnum::PRIVATE->value,
+                $tableView instanceof TableView => TableViewGroupEnum::SYSTEM->value,
+                $tableView->isFavorite() => TableViewGroupEnum::FAVORITE->value,
+                $tableView->isPublic() => TableViewGroupEnum::PUBLIC->value,
+                default => TableViewGroupEnum::PRIVATE->value,
             }, true);
     }
 
     /**
-     * @param  Collection<value-of<TableViewTypeEnum>, Collection<string, BaseTableView>> $tableViews
-     * @return Collection<value-of<TableViewTypeEnum>, Collection<string, BaseTableView>>
+     * @param  Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>  $tableViews
+     * @return Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>
      */
     protected function filterTableViewManagerItems(Collection $tableViews): Collection
     {
         return $tableViews
-            ->filter(fn (Collection $tableViews, string $group) =>
-                $this->tableViewManagerActiveFilters[$group] ?? false
+            ->filter(
+                fn (Collection $tableViews, string $group) => $this->tableViewManagerActiveFilters[$group] ?? false
             )
             ->map(function (Collection $tableViews): Collection {
                 if (empty($this->tableViewManagerSearch)) {
@@ -467,36 +631,16 @@ trait HasTableViews
                         return $carry;
                     });
 
-                $this->activeTableViewKey = $defaultTableView->getIdentifier();
+                $this->activeTableViewKey = $defaultTableView?->getIdentifier();
             }
         }
     }
 
     public function toggleActiveTableView(string $tableViewKey): void
     {
-        $table = $this->getTable();
-
-        $originalShouldPersistTableFiltersInSession = $table->persistsFiltersInSession();
-        $originalShouldPersistTableSortInSession = $table->persistsSortInSession();
-        $originalShouldPersistTableSearchInSession = $table->persistsSearchInSession();
-        $originalShouldPersistTableColumnSearchesInSession = $table->persistsColumnSearchesInSession();
-
-        // The session storage here gets explicitly disabled, so that it doesn't get polluted from updates performed
-        // on livewire properties that are updated based on the active table view - only the active table view
-        // should be stored in session, not its parts.
-        $table
-            ->persistFiltersInSession(false)
-            ->persistSortInSession(false)
-            ->persistSearchInSession(false)
-            ->persistColumnSearchesInSession(false);
-
-        try {
-            if ($this->activeTableViewKey === $tableViewKey) {
-                $this->removeActiveTableView();
-
-                return;
-            }
-
+        if ($this->activeTableViewKey === $tableViewKey) {
+            $this->removeActiveTableView();
+        } else {
             $this->activeTableViewKey = $tableViewKey;
 
             $activeTableView = $this->getActiveTableView();
@@ -506,12 +650,6 @@ trait HasTableViews
             }
 
             $this->loadStateFromTableView($activeTableView);
-        } finally {
-            $table
-                ->persistFiltersInSession($originalShouldPersistTableFiltersInSession)
-                ->persistSortInSession($originalShouldPersistTableSortInSession)
-                ->persistSearchInSession($originalShouldPersistTableSearchInSession)
-                ->persistColumnSearchesInSession($originalShouldPersistTableColumnSearchesInSession);
         }
 
         $this->updatedActiveTableView();
@@ -646,6 +784,106 @@ trait HasTableViews
 
         if ($activeTableView->hasModifyQueryUsing()) {
             $activeTableView->modifyQuery($query);
+        }
+    }
+
+    public function updatedTableFilters(): void
+    {
+        $table = $this->getTable();
+        $shouldPersistTableFiltersInSession = $table->persistsFiltersInSession();
+
+        if ($this->activeTableViewKey === null || ! $shouldPersistTableFiltersInSession) {
+            parent::updatedTableFilters();
+
+            return;
+        }
+
+        try {
+            $table->persistFiltersInSession(false);
+
+            parent::updatedTableFilters();
+        } finally {
+            $table->persistFiltersInSession($shouldPersistTableFiltersInSession);
+        }
+    }
+
+    public function updatedTableSortColumn(): void
+    {
+        $table = $this->getTable();
+        $shouldPersistTableSortInSession = $table->persistsSortInSession();
+
+        if ($this->activeTableViewKey === null || ! $shouldPersistTableSortInSession) {
+            parent::updatedTableSortColumn();
+
+            return;
+        }
+
+        try {
+            $table->persistSortInSession(false);
+
+            parent::updatedTableSortColumn();
+        } finally {
+            $table->persistSortInSession($shouldPersistTableSortInSession);
+        }
+    }
+
+    public function updatedTableSortDirection(): void
+    {
+        $table = $this->getTable();
+        $shouldPersistTableSortInSession = $table->persistsSortInSession();
+
+        if ($this->activeTableViewKey === null || ! $shouldPersistTableSortInSession) {
+            parent::updatedTableSortDirection();
+
+            return;
+        }
+
+        try {
+            $table->persistSortInSession(false);
+
+            parent::updatedTableSortDirection();
+        } finally {
+            $table->persistSortInSession($shouldPersistTableSortInSession);
+        }
+    }
+
+    public function updatedTableSearch(): void
+    {
+        $table = $this->getTable();
+        $shouldPersistTableSearchInSession = $table->persistsSearchInSession();
+
+        if ($this->activeTableViewKey === null || ! $shouldPersistTableSearchInSession) {
+            parent::updatedTableSearch();
+
+            return;
+        }
+
+        try {
+            $table->persistSearchInSession(false);
+
+            parent::updatedTableSearch();
+        } finally {
+            $table->persistSearchInSession($shouldPersistTableSearchInSession);
+        }
+    }
+
+    public function updatedTableColumnSearches($value = null, ?string $key = null): void
+    {
+        $table = $this->getTable();
+        $shouldPersistColumnSearchesInSession = $table->persistsColumnSearchesInSession();
+
+        if ($this->activeTableViewKey === null || ! $shouldPersistColumnSearchesInSession) {
+            parent::updatedTableColumnSearches(...func_get_args());
+
+            return;
+        }
+
+        try {
+            $table->persistColumnSearchesInSession(false);
+
+            parent::updatedTableColumnSearches(...func_get_args());
+        } finally {
+            $table->persistColumnSearchesInSession($shouldPersistColumnSearchesInSession);
         }
     }
 

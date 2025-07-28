@@ -208,7 +208,7 @@ it('doesn\'t persist individual components of active table view in session', fun
 
     $instance = $livewire->instance();
 
-    expect(session($instance->getTableFiltersSessionKey()))
+    $expectSessionToBeEmpty = fn () => expect(session($instance->getTableFiltersSessionKey()))
         ->toBe([
             'status' => [
                 'value' => null,
@@ -223,4 +223,17 @@ it('doesn\'t persist individual components of active table view in session', fun
         ->toBe('')
         ->and(session($instance->getTableColumnSearchesSessionKey()))
         ->toBeEmpty();
+
+    $expectSessionToBeEmpty();
+
+    $livewire
+        ->filterTable('status', 'inactive')
+        ->sortTable('quantity', 'desc')
+        ->searchTable('search 2')
+        ->searchTableColumns([
+            'name' => 'name search 2',
+            'total' => 'total search 2',
+        ]);
+
+    $expectSessionToBeEmpty();
 });

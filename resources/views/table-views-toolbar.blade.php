@@ -1,19 +1,22 @@
 @php
+    use Dvarilek\FilamentTableViews\Components\TableView\TableView;
     use Dvarilek\FilamentTableViews\Components\TableView\UserView;
-    use Dvarilek\FilamentTableViews\Enums\TableViewTypeEnum;
     use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
+    use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
+    use Illuminate\Support\Collection;
 @endphp
 
 @if (in_array(HasTableViews::class, class_uses_recursive($this)))
     @php
+        unset($this->userTableViews);
         $livewireId = $this->getId();
 
         $tableViews = $this->getAllTableViews(shouldGroupByTableViewType: true);
 
-        $systemTableViews = $tableViews->get(TableViewTypeEnum::SYSTEM->value, collect());
-        $favoriteUserTableViews = $tableViews->get(TableViewTypeEnum::FAVORITE->value, collect());
-        $publicUserTableViews = $tableViews->get(TableViewTypeEnum::PUBLIC->value, collect());
-        $privateUserTableViews = $tableViews->get(TableViewTypeEnum::PRIVATE->value, collect());
+        $systemTableViews = $tableViews->get(TableViewGroupEnum::SYSTEM->value, collect());
+        $favoriteUserTableViews = $tableViews->get(TableViewGroupEnum::FAVORITE->value, collect());
+        $publicUserTableViews = $tableViews->get(TableViewGroupEnum::PUBLIC->value, collect());
+        $privateUserTableViews = $tableViews->get(TableViewGroupEnum::PRIVATE->value, collect());
 
         $hasSystemTableViews = filled($systemTableViews);
         $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
@@ -85,12 +88,15 @@
                 {{-- the manager should be refactored into a view component - this way the usings can be handled more nicely --}}
                 <x-filament-table-views::manager
                     :livewireId="$livewireId"
-                    :tableViews="$this->filterTableViewManagerItems($tableViews)"
+                    :tableViews="$tableViews"
+                    :filterTableViewsUsing="fn (Collection $tableViews) => $this->filterTableViewManagerItems($tableViews)"
                     :tableViewGroupOrder="$this->getTableViewManagerGroupOrder()"
                     :activeTableViewKey="$activeTableViewKey"
                     :heading="$this->getTableViewManagerHeading()"
-                    :getGroupHeadingUsing="fn (TableViewTypeEnum $group) => $this->getTableViewManagerGroupHeading($group)"
-                    :getFilterLabelUsing="fn (TableViewTypeEnum $group) => $this->getTableViewManagerFilterLabel($group)"
+                    :getGroupHeadingUsing="fn (TableViewGroupEnum $group) => $this->getTableViewManagerGroupHeading($group)"
+                    :getFilterLabelUsing="fn (TableViewGroupEnum $group) => $this->getTableViewManagerFilterLabel($group)"
+                    :getFilterColorUsing="fn (TableViewGroupEnum $group, bool $isActive) => $this->getTableViewManagerFilterColor($group, $isActive)"
+                    :getFilterIconUsing="fn (TableViewGroupEnum $group, bool $isActive) => $this->getTableViewManagerFilterIcon($group, $isActive)"
                     :isSearchable="$this->hasTableViewManagerSearch()"
                     :searchDebounce="$this->getTableViewManagerSearchDebounce()"
                     :searchOnBlur="$this->getTableViewManagerSearchOnBlur()"
@@ -103,7 +109,10 @@
                     :systemTableViewActions="$this->getTableViewManagerSystemActions()"
                     :userTableViewActions="$this->getTableViewManagerUserActions()"
                     :isCollapsible="$this->isTableViewManagerCollapsible()"
+                    :defaultCollapsedGroups="$this->getTableViewManagerDefaultCollapsedGroups()"
                     :isReorderable="$this->isTableViewManagerReorderable()"
+                    :isDeferredReorderable="$this->isTableViewManagerDeferredReorderable()"
+                    :isMultiGroupReorderable="$this->isTableViewManagerMultiGroupReorderable()"
                 />
             </x-filament::dropdown>
         </div>

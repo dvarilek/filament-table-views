@@ -1,16 +1,19 @@
 @php
-    use Dvarilek\FilamentTableViews\Enums\TableViewTypeEnum;
+    use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
     use Illuminate\View\ComponentAttributeBag;
 @endphp
 
 @props([
     'livewireId',
     'tableViews',
+    'filterTableViewsUsing',
     'tableViewGroupOrder',
     'activeTableViewKey',
     'heading',
     'getGroupHeadingUsing',
     'getFilterLabelUsing',
+    'getFilterColorUsing',
+    'getFilterIconUsing',
     'isSearchable',
     'searchDebounce' => '500ms',
     'searchOnBlur' => false,
@@ -23,26 +26,219 @@
     'systemTableViewActions',
     'userTableViewActions',
     'isCollapsible',
+    'defaultCollapsedGroups',
     'isReorderable',
+    'isDeferredReorderable',
+    'isMultiGroupReorderable'
 ])
 
 @php
-    // TODO: Ensure the filter buttons get applied actually
-    $hasTableViews = fn (TableViewTypeEnum $group) => filled($tableViews->get($group->value));
-    $canRenderTableViewGroup = fn (TableViewTypeEnum $group) => $hasTableViews($group) && (! $hasFilterButtons || $activeFilters[$group->value]);
+    $filteredTableViews = $filterTableViewsUsing($tableViews);
+    $hasTableViews = fn (TableViewGroupEnum $group) => filled($tableViews->get($group->value));
 
-    $unfilteredTableViewGroups = collect(TableViewTypeEnum::cases())
+    $hasTableViewsVisible = fn (TableViewGroupEnum $group) => filled($filteredTableViews->get($group->value));
+
+    // TODO: This is quite messy - refactor this check, I would argue that table groups and it breaks with filters....
+    $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => $isMultiGroupReorderable || ($hasTableViews($group) && (! $hasFilterButtons || $activeFilters[$group->value]));
+
+    $tableViewGroups = collect(TableViewGroupEnum::cases())
        ->sortBy(
            $tableViewGroupOrder instanceof Closure ?
                 $tableViewGroupOrder :
-                fn (TableViewTypeEnum $group) => array_search($group, $tableViewGroupOrder, true)
+                fn (TableViewGroupEnum $group) => array_search($group, $tableViewGroupOrder, true)
        )
        ->values();
 
-    $tableViewGroups = $unfilteredTableViewGroups->filter(fn(TableViewTypeEnum $group) => $tableViews->has($group->value));
+    $filteredTableViewGroups = $tableViewGroups->filter(fn(TableViewGroupEnum $group) => $filteredTableViews->has($group->value));
+
+    $defaultCollapsedGroups = array_map(fn (TableViewGroupEnum $group) => $group->value, $defaultCollapsedGroups);
+
+    // TODO: Rename pendingReorderingOrder to pendingReorderedRecords - also do for that singular variant, maybe remove the original - might be tricky to do
 @endphp
 
-<div class="flex flex-1 flex-col">
+<div
+    class="flex flex-1 flex-col"
+    @if ($isCollapsible || $isReorderable)
+       x-data="{
+            collapsedGroups: new Set(@js($defaultCollapsedGroups)),
+
+            isDeferredReorderable: @js($isDeferredReorderable),
+
+            isMultiGroupReorderable: @js($isMultiGroupReorderable),
+
+            activeReorderingGroup: null,
+
+            pendingReorderingOrder: new Set(),
+
+            isMultiGroupReorderingActive: false,
+
+            pendingReorderingOrders: new Map(),
+
+            isTrackingOrderChanges: @js($isDeferredReorderable),
+
+            reorderedRecords: new Set(),
+
+            isLoading: false,
+
+            toggleCollapsedGroup: function (group) {
+                if (this.isGroupCollapsed(group)) {
+                    this.collapsedGroups.delete(group)
+
+                    return
+                }
+
+                this.collapsedGroups.add(group)
+            },
+
+            isGroupCollapsed: function (group) {
+                return this.collapsedGroups.has(group)
+            },
+
+            startGroupReordering: function (group) {
+                if (this.isLoading) {
+                    return
+                }
+
+                this.activeReorderingGroup = group
+            },
+
+            stopGroupReordering: function () {
+                this.activeReorderingGroup = null
+            },
+
+            isGroupReordering: function (group) {
+                return this.activeReorderingGroup === group
+            },
+
+            toggleGroupReordering: async function (group) {
+                if (this.isLoading) {
+                    return
+                }
+
+                if (this.isGroupReordering(group)) {
+                    if (this.isDeferredReorderable) {
+                        await this.reorderGroup(group, this.pendingReorderingOrder)
+
+                        this.pendingReorderingOrder = new Set()
+
+                        if (this.isTrackingOrderChanges) {
+                            this.reorderedRecords = new Set()
+                        }
+                    }
+
+                    this.stopGroupReordering(group)
+
+                    return
+                }
+
+                this.startGroupReordering(group)
+            },
+
+            handleGroupReorder: async function (event) {
+                const newOrder = new Set(event.target.sortable.toArray())
+                const group = event.target.dataset.tableViewGroup
+
+                if (this.isDeferredReorderable) {
+                    this.pendingReorderingOrder = newOrder
+
+                    return
+                }
+
+                await this.reorderGroup(group, newOrder)
+            },
+
+            reorderGroup: async function (group, order) {
+                if (! order.size) {
+                    return
+                }
+
+                this.isLoading = true
+
+                try {
+                    await $wire.reorderTableViewsInGroup(group, [...order])
+                } finally {
+                    this.isLoading = false
+                }
+            },
+
+            startMultiGroupReordering: function () {
+                if (this.isLoading) {
+                    return
+                }
+
+                this.isMultiGroupReorderingActive = true
+            },
+
+            stopMultiGroupReordering: function () {
+                this.isMultiGroupReorderingActive = false
+            },
+
+            isMultiGroupReordering: function () {
+                return this.isMultiGroupReorderingActive
+            },
+
+            toggleMultiGroupReordering: async function () {
+                if (this.isLoading) {
+                    return
+                }
+
+                if (this.isMultiGroupReordering()) {
+                    if (this.isDeferredReorderable) {
+                        await this.reorderGroups(this.pendingReorderingOrders)
+
+                        this.pendingReorderingOrders.clear()
+                    }
+
+                    this.stopMultiGroupReordering()
+
+                    return
+                }
+
+                this.startMultiGroupReordering()
+            },
+
+            handleMultiGroupReorder: async function (event) {
+                const fromGroup = event.from.dataset.tableViewGroup
+                const fromNewOrder = new Set(event.from.sortable.toArray())
+
+                const toGroup = event.to.dataset.tableViewGroup
+                const toNewOrder = new Set(event.to.sortable.toArray())
+
+                if (this.isDeferredReorderable) {
+                     this.pendingReorderingOrders.set(fromGroup, fromNewOrder)
+                     this.pendingReorderingOrders.set(toGroup, toNewOrder)
+
+                     return
+                }
+
+                await this.reorderGroups(new Map([
+                    [fromGroup, fromNewOrder],
+                    [toGroup, toNewOrder]
+                ]))
+            },
+
+            reorderGroups: async function (groupOrdersMap) {
+                if (groupOrdersMap.size === 1) {
+                    await this.reorderGroup(...groupOrdersMap.entries().next().value)
+
+                    return
+                }
+
+                this.isLoading = true
+
+                try {
+                    const groupedTableViewOrders = Object.fromEntries(
+                      [...this.pendingReorderingOrders.entries()].map(([group, order]) => [group, [...order]])
+                    )
+
+                    await $wire.reorderTableViewsInGroups(groupedTableViewOrders)
+                } finally {
+                    this.isLoading = false
+                }
+            }
+        }"
+    @endif
+>
     <div class="flex flex-1 flex-col space-y-4 px-6 pb-6 pt-6">
         <div class="flex justify-between">
             <h4
@@ -120,7 +316,7 @@
 
         @if ($hasFilterButtons)
             <div class="flex flex-wrap gap-x-4 gap-y-2">
-                @foreach($unfilteredTableViewGroups as $group)
+                @foreach($tableViewGroups as $group)
                     <x-filament::badge
                         :attributes="
                             \Filament\Support\prepare_inherited_attributes(
@@ -129,8 +325,8 @@
                                     'wire:loading.attr' => 'disabled',
                                     'wire:click' => 'toggleViewManagerFilterButton(\'' . $group->value . '\')',
                                     'disabled' => ! $hasTableViews($group),
-                                    'color' => $canRenderTableViewGroup($group) ? 'primary' : 'gray',
-                                    'icon' => $canRenderTableViewGroup($group) ? 'heroicon-o-eye' : 'heroicon-o-eye-slash',
+                                    'color' => $getFilterColorUsing($group, $canRenderTableViewGroup($group)),
+                                    'icon' => $getFilterIconUsing($group, $canRenderTableViewGroup($group)),
                                 ])
                             )
                             ->class([
@@ -144,81 +340,115 @@
                             <span
                                 class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
                             >
-                            {{ $tableViewCount > 99 ? '99+' : $tableViewCount }}
-                        </span>
+                                {{ $tableViewCount > 99 ? '99+' : $tableViewCount }}
+                            </span>
                         @endif
                     </x-filament::badge>
                 @endforeach
             </div>
         @endif
+
+        @if ($isReorderable && $isMultiGroupReorderable)
+            <div class="flex flex-1 justify-between">
+                <h5
+                    class="text-sm font-medium uppercase tracking-wide "
+                >
+                    Multi group reordering
+                </h5>
+
+                <x-filament-table-views::manager.reordering-indicator
+                    :isCollapsible="$isCollapsible"
+                    :isDeferredReorderable="$isDeferredReorderable"
+                    :isMultiGroupReorderable="$isMultiGroupReorderable"
+                />
+            </div>
+        @endif
     </div>
 
-    @if ($canRenderTableViewGroup(TableViewTypeEnum::FAVORITE) || $canRenderTableViewGroup(TableViewTypeEnum::PRIVATE) || $canRenderTableViewGroup(TableViewTypeEnum::PUBLIC) || $canRenderTableViewGroup(TableViewTypeEnum::SYSTEM))
+    @if ($canRenderTableViewGroup(TableViewGroupEnum::FAVORITE) || $canRenderTableViewGroup(TableViewGroupEnum::PRIVATE) || $canRenderTableViewGroup(TableViewGroupEnum::PUBLIC) || $canRenderTableViewGroup(TableViewGroupEnum::SYSTEM))
         <div
             class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
-            @if ($isCollapsible || $isReorderable)
-                x-data="{
-                    collapsedGroups: [],
-
-                    reorderingGroup: null,
-
-                    isReorderingDeferred: false,
-
-                    pendingNewOrder: [],
-
-                    toggleCollapsedGroup: function (group) {
-                        if (this.isGroupCollapsed(group)) {
-                            this.collapsedGroups.splice(this.collapsedGroups.indexOf(group), 1)
-
-                            return
-                        }
-
-                        this.collapsedGroups.push(group)
-                    },
-
-                    isGroupCollapsed: function (group) {
-                        return this.collapsedGroups.includes(group)
-                    },
-
-                    startReordering: function (group) {
-                        this.reorderingGroup = group
-                    },
-
-                    stopReordering: function () {
-                        this.reorderingGroup = null
-                    },
-
-                    isReordering: function (group) {
-                        return this.reorderingGroup === group
-                    },
-
-                    handleGroupReorder: function (group, event) {
-                        const newOrder = event.target.sortable.toArray()
-
-                        if (this.isReorderingDeferred) {
-                            this.pendingNewOrder = newOrder
-
-                            return
-                        }
-
-                        $wire.reorderTableViewManagerTableViews(group, newOrder)
-                    },
-                }"
-            @endif
         >
             @foreach ($tableViewGroups as $group)
                 @if ($canRenderTableViewGroup($group))
-                    <x-filament-table-views::manager.table-view-group
-                        :group="$group"
-                        :livewireId="$livewireId"
-                        :groupHeading="$getGroupHeadingUsing($group)"
-                        :tableViews="$tableViews->get($group->value, collect())"
-                        :activeTableViewKey="$activeTableViewKey"
-                        :actions="$group !== TableViewTypeEnum::SYSTEM ? $userTableViewActions : $systemTableViewActions"
-                        :isCollapsible="$isCollapsible"
-                        :isReorderable="$group !== TableViewTypeEnum::SYSTEM ? $isReorderable : false"
-                    />
+                    @php
+                        $groupValue = $group->value;
+                        $isReorderable = $group !== TableViewGroupEnum::SYSTEM ? $isReorderable : false;
+                        $tableViewActions = $group !== TableViewGroupEnum::SYSTEM ? $userTableViewActions : $systemTableViewActions
+                    @endphp
+
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div
+                                @class([
+                                    'cursor-pointer' => $isCollapsible,
+                                    'flex items-center gap-x-2',
+                                ])
+                                @if ($isCollapsible)
+                                    x-on:click="toggleCollapsedGroup(@js($groupValue))"
+                                @endif
+                            >
+                                @if ($groupHeading = $getGroupHeadingUsing($group))
+                                    <h5
+                                        class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                                    >
+                                        {{ $groupHeading }}
+                                    </h5>
+                                @endif
+
+                                @if ($isCollapsible)
+                                    <x-filament::icon
+                                        icon="heroicon-o-chevron-up"
+                                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                                        x-bind:class="isGroupCollapsed('{{ $groupValue }}') && '-rotate-180'"
+                                    />
+                                @endif
+                            </div>
+
+                            @if ($isReorderable && ! $isMultiGroupReorderable)
+                                <x-filament-table-views::manager.reordering-indicator
+                                    :groupValue="$groupValue"
+                                    :isCollapsible="$isCollapsible"
+                                    :isDeferredReorderable="$isDeferredReorderable"
+                                    :isMultiGroupReorderable="$isMultiGroupReorderable"
+                                />
+                            @endif
+                        </div>
+
+                        <div
+                            class="space-y-1"
+                            @if ($isCollapsible)
+                                x-show="! isGroupCollapsed(@js($groupValue))"
+                                x-bind:aria-expanded="! isGroupCollapsed(@js($groupValue))"
+                                aria-expanded="true"
+                            @endif
+                            @if ($isReorderable)
+                                x-sortable
+                                x-sortable-animation="400s"
+                                data-table-view-group="{{ $groupValue }}"
+                                @if ($isMultiGroupReorderable)
+                                    x-sortable-group="shared"
+                                    x-on:end.stop="handleMultiGroupReorder($event)"
+                                @else
+                                    x-on:end.stop="handleGroupReorder($event)"
+                                @endif
+                            @endif
+                        >
+                            @foreach($filteredTableViews->get($group->value, collect()) as $key => $tableView)
+                                <x-filament-table-views::manager.table-view-group-item
+                                    :wire-key="'filament-table-views-manager-' . $groupValue . '-view-' . $key . '-' . $livewireId"
+                                    :key="$key"
+                                    :group="$group"
+                                    :tableView="$tableView"
+                                    :activeTableViewKey="$activeTableViewKey"
+                                    :actions="$tableViewActions"
+                                    :isReorderable="$isReorderable"
+                                    :isMultiGroupReorderable="$isMultiGroupReorderable"
+                                />
+                            @endforeach
+                        </div>
+                    </div>
                 @endif
             @endforeach
         </div>

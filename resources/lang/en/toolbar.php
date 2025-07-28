@@ -86,6 +86,18 @@ return [
 
             ],
 
+            'reordering' => [
+
+                'confirm_reordering' => 'Save order',
+
+                'loading_indicator' => 'Saving...',
+
+                'stop_reordering' => 'Cancel',
+
+                'reordered_notification_title' => 'Saved',
+
+            ],
+
             'empty-state' => [
 
                 'search_empty_state' => 'No matching table views found',

@@ -86,6 +86,18 @@ return [
 
             ],
 
+            'reordering' => [
+
+                'confirm_reordering' => 'Uložit pořadí',
+
+                'loading_indicator' => 'Ukládám...',
+
+                'stop_reordering' => 'Zrušit',
+
+                'reordered_notification_title' => 'Uloženo',
+
+            ],
+
             'empty-state' => [
 
                 'search_empty_state' => 'Nenalezeny žádné odpovídající pohledy',

@@ -5,37 +5,14 @@ namespace Dvarilek\FilamentTableViews\Tests\Tests\Fixtures;
 use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
 use Dvarilek\FilamentTableViews\Tests\Models\Product;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Livewire\Component;
 
-class LivewireTableViewFixture extends Component implements HasForms, Tables\Contracts\HasTable
+class LivewireTableViewFixture extends ParentLivewireTableViewFixture
 {
-    use HasTableViews {
-        HasTableViews::configureAction insteadof InteractsWithActions;
-        InteractsWithActions::configureAction as baseConfigureAction;
-    }
-    use InteractsWithActions;
-    use InteractsWithForms;
-    use InteractsWithTable;
-    use InteractsWithTable {
-        InteractsWithTable::filterTableQuery insteadof HasTableViews;
-        InteractsWithTable::filterTableQuery as baseFilterTableQuery;
-    }
-
-    public function filterTableQuery(Builder $query): Builder
-    {
-        $this->applyActiveTableViewToTableQuery($query);
-
-        return $this->baseFilterTableQuery($query);
-    }
+    use HasTableViews;
 
     public static function getTableViewModelType(): string
     {

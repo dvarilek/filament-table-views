@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Enums;
 
-enum TableViewTypeEnum: string
+enum TableViewGroupEnum: string
 {
     case FAVORITE = 'favorite';
 
