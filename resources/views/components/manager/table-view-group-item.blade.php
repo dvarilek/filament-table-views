@@ -6,7 +6,6 @@
     'activeTableViewKey',
     'actions',
     'isReorderable',
-    'isMultiGroupReorderable',
 ])
 
 @php
@@ -24,7 +23,7 @@
     $hasActions = count($actions) !== 0;
 
     if ($isUserTableView && $hasActions) {
-        $record = $tableView->getTableView();
+        $record = $tableView->getRecord();
 
         $actionsToProcess = collect($actions);
 
@@ -58,14 +57,8 @@
     }}
     @if ($isReorderable)
         x-sortable-item="{{ $key }}"
-
-        @if ($isMultiGroupReorderable)
-            x-bind:class="isMultiGroupReordering() && ! isLoading ? 'cursor-move' : null"
-            x-bind:x-sortable-handle="isMultiGroupReordering() && ! isLoading"
-        @else
-            x-bind:class="isGroupReordering('{{ $groupValue }}') && ! isLoading ? 'cursor-move' : null"
-            x-bind:x-sortable-handle="isGroupReordering('{{ $groupValue }}') && ! isLoading"
-        @endif
+        x-bind:class="isReorderingActive(@js($groupValue)) && ! isLoading ? 'cursor-move' : null "
+        x-bind:x-sortable-handle="isReorderingActive(@js($groupValue)) && ! isLoading"
     @endif
 >
     <button
@@ -83,21 +76,8 @@
             'width: 100%' => ! $hasActions,
         ])
         @if ($isReorderable)
-            @if ($isMultiGroupReorderable)
-                x-bind:class="isMultiGroupReordering() && ! isLoading ? 'cursor-move' : null"
-                x-on:click="
-                    isMultiGroupReordering()
-                        ? null
-                        : $wire.call('toggleActiveTableView', {{ Js::from($key) }})
-                "
-            @else
-                x-bind:class="isGroupReordering('{{ $groupValue }}') && ! isLoading ? 'cursor-move' : null"
-                x-on:click="
-                    isGroupReordering('{{ $groupValue }}')
-                        ? null
-                        : $wire.call('toggleActiveTableView', {{ Js::from($key) }})
-                "
-            @endif
+            x-bind:class="isReorderingActive(@js($groupValue)) && ! isLoading ? 'cursor-move' : null "
+            x-on:click="isReorderingActive(@js($groupValue)) ? null : $wire.call('toggleActiveTableView', {{ Js::from($key) }})"
         @else
             wire:click="toggleActiveTableView({{ Js::from($key) }})"
         @endif
@@ -180,39 +160,25 @@
 
         @if ($isReorderable)
             @if ($hasActions)
-                @if ($isMultiGroupReorderable)
-                    <div x-cloak x-show="! isMultiGroupReordering()">
-                        @foreach ($actions as $action)
-                            {{ $action }}
-                        @endforeach
-                    </div>
-                @else
-                    <div
-                        x-cloak
-                        x-show="! isGroupReordering('{{ $groupValue }}')"
-                    >
-                        @foreach ($actions as $action)
-                            {{ $action }}
-                        @endforeach
-                    </div>
-                @endif
+                <div
+                    x-cloak
+                    x-show="! isReorderingActive(@js($groupValue))"
+                >
+                    @foreach ($actions as $action)
+                        {{ $action }}
+                    @endforeach
+                </div>
             @endif
 
-            @if ($isMultiGroupReorderable)
-                <div x-cloak x-show="isMultiGroupReordering()">
-                    <x-filament::icon
-                        icon="heroicon-o-bars-2"
-                        class="h-5 w-5 text-gray-500 dark:text-gray-400"
-                    />
-                </div>
-            @else
-                <div x-cloak x-show="isGroupReordering('{{ $groupValue }}')">
-                    <x-filament::icon
-                        icon="heroicon-o-bars-2"
-                        class="h-5 w-5 text-gray-500 dark:text-gray-400"
-                    />
-                </div>
-            @endif
+            <div
+                x-cloak
+                x-show="isReorderingActive(@js($groupValue))"
+            >
+                <x-filament::icon
+                    icon="heroicon-o-bars-2"
+                    class="h-5 w-5 text-gray-500 dark:text-gray-400"
+                />
+            </div>
         @else
             @foreach ($actions as $action)
                 {{ $action }}

@@ -1,86 +1,67 @@
 @php
     use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
+    use Dvarilek\FilamentTableViews\Contracts\HasTableViewManager;
     use Illuminate\View\ComponentAttributeBag;
-@endphp
 
-@props([
-    'livewireId',
-    'tableViews',
-    'filterTableViewsUsing',
-    'tableViewGroupOrder',
-    'activeTableViewKey',
-    'heading',
-    'getGroupHeadingUsing',
-    'getFilterLabelUsing',
-    'getFilterColorUsing',
-    'getFilterIconUsing',
-    'isSearchable',
-    'searchDebounce' => '500ms',
-    'searchOnBlur' => false,
-    'searchLabel',
-    'searchPlaceholder',
-    'emptyStatePlaceholder',
-    'hasFilterButtons',
-    'activeFilters',
-    'resetLabel',
-    'systemTableViewActions',
-    'userTableViewActions',
-    'isCollapsible',
-    'defaultCollapsedGroups',
-    'isReorderable',
-    'isDeferredReorderable',
-    'isMultiGroupReorderable'
-])
+    /* @var HasTableViewManager $livewire */
+    $livewire = $getLivewire();
+    $livewireId = $livewire->getId();
 
-@php
-    $filteredTableViews = $filterTableViewsUsing($tableViews);
-    $hasTableViews = fn (TableViewGroupEnum $group) => filled($tableViews->get($group->value));
+    $heading = $getHeading();
 
+    $isSearchable = $isSearchable();
+    $searchDebounce = $getSearchDebounce();
+    $isSearchOnBlur = $isSearchOnBlur();
+    $searchLabel = $getSearchLabel();
+    $searchPlaceholder = $getSearchPlaceholder();
+
+    $resetLabel = $getResetLabel();
+    $emptyStatePlaceholder = $getEmptyStatePlaceholder();
+
+    $isFilterable = $isFilterable();
+    $filters = $livewire->tableViewManagerActiveFilters;
+    $isReorderable = $isReorderable();
+    $isDeferredReorderable = $isDeferredReorderable();
+    $isMultiGroupReorderable = $isMultiGroupReorderable();
+
+    $isCollapsible = $isCollapsible();
+    $defaultCollapsedGroups = array_map(fn (TableViewGroupEnum $group) => $group->value, $getDefaultCollapsedGroups());
+    $tableViewGroups = $getTableViewGroups();
+
+    $activeTableViewKey = $livewire->activeTableViewKey;
+    $systemTableViewActions = $livewire->getTableViewManagerSystemActions();
+    $userTableViewActions = $livewire->getTableViewManagerUserActions();
+
+    $tableViews = $livewire->getAllTableViews(shouldGroupByTableViewType: true);
+    $filteredTableViews = $livewire->filterTableViewManagerTableViews($tableViews);
+
+    // TODO: Finish this, also consider passing some data through ->viewData and maybe move dropdown into here 
     $hasTableViewsVisible = fn (TableViewGroupEnum $group) => filled($filteredTableViews->get($group->value));
+    $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => $isMultiGroupReorderable || ($hasTableViewsVisible($group) && (! $isFilterable || $filters[$group->value]));
 
-    // TODO: This is quite messy - refactor this check, I would argue that table groups and it breaks with filters....
-    $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => $isMultiGroupReorderable || ($hasTableViews($group) && (! $hasFilterButtons || $activeFilters[$group->value]));
-
-    $tableViewGroups = collect(TableViewGroupEnum::cases())
-       ->sortBy(
-           $tableViewGroupOrder instanceof Closure ?
-                $tableViewGroupOrder :
-                fn (TableViewGroupEnum $group) => array_search($group, $tableViewGroupOrder, true)
-       )
-       ->values();
-
-    $filteredTableViewGroups = $tableViewGroups->filter(fn(TableViewGroupEnum $group) => $filteredTableViews->has($group->value));
-
-    $defaultCollapsedGroups = array_map(fn (TableViewGroupEnum $group) => $group->value, $defaultCollapsedGroups);
-
-    // TODO: Rename pendingReorderingOrder to pendingReorderedRecords - also do for that singular variant, maybe remove the original - might be tricky to do
 @endphp
 
 <div
     class="flex flex-1 flex-col"
     @if ($isCollapsible || $isReorderable)
-       x-data="{
+        x-data="{
             collapsedGroups: new Set(@js($defaultCollapsedGroups)),
 
             isDeferredReorderable: @js($isDeferredReorderable),
+
+            pendingReorderedRecords: new Map(),
 
             isMultiGroupReorderable: @js($isMultiGroupReorderable),
 
             activeReorderingGroup: null,
 
-            pendingReorderingOrder: new Set(),
+            isTrackingChanges: true,
 
             isMultiGroupReorderingActive: false,
 
-            pendingReorderingOrders: new Map(),
-
-            isTrackingOrderChanges: @js($isDeferredReorderable),
-
-            reorderedRecords: new Set(),
-
             isLoading: false,
 
-            toggleCollapsedGroup: function (group) {
+            toggleCollapsedGroup(group) {
                 if (this.isGroupCollapsed(group)) {
                     this.collapsedGroups.delete(group)
 
@@ -94,52 +75,81 @@
                 return this.collapsedGroups.has(group)
             },
 
-            startGroupReordering: function (group) {
+            isReorderingActive(group = null) {
+                if (this.isMultiGroupReorderable) {
+                    return this.isMultiGroupReorderingActive;
+                }
+
+                return this.activeReorderingGroup === group;
+            },
+
+            startReordering(group = null) {
                 if (this.isLoading) {
                     return
                 }
 
-                this.activeReorderingGroup = group
+                if (this.isMultiGroupReorderable) {
+                    this.isMultiGroupReorderingActive = true;
+
+                    return;
+                }
+
+                this.activeReorderingGroup = group;
             },
 
-            stopGroupReordering: function () {
-                this.activeReorderingGroup = null
+            stopReordering(group = null) {
+                if (this.isMultiGroupReorderable) {
+                    this.isMultiGroupReorderingActive = false;
+
+                    return;
+                }
+
+                this.activeReorderingGroup = null;
             },
 
-            isGroupReordering: function (group) {
-                return this.activeReorderingGroup === group
+            hasPendingReorderedRecords(group = null) {
+                if (group) {
+                    return this.pendingReorderedRecords.has(group)
+                }
+
+                return this.pendingReorderedRecords.size > 0
             },
 
-            toggleGroupReordering: async function (group) {
+            async toggleReordering(group = null) {
                 if (this.isLoading) {
                     return
                 }
 
-                if (this.isGroupReordering(group)) {
+                if (this.isReorderingActive(group)) {
                     if (this.isDeferredReorderable) {
-                        await this.reorderGroup(group, this.pendingReorderingOrder)
+                        const pendingReorderedRecords = this.pendingReorderedRecords
 
-                        this.pendingReorderingOrder = new Set()
+                        if (pendingReorderedRecords.size > 0) {
+                            if (this.isMultiGroupReorderable) {
+                                await this.reorderMultipleGroups(pendingReorderedRecords)
+                            } else {
+                                await this.reorderGroup(group, pendingReorderedRecords.get(group))
+                            }
 
-                        if (this.isTrackingOrderChanges) {
-                            this.reorderedRecords = new Set()
+                            this.pendingReorderedRecords.clear()
                         }
                     }
 
-                    this.stopGroupReordering(group)
+                    this.stopReordering(group)
 
                     return
                 }
 
-                this.startGroupReordering(group)
+                this.startReordering(group)
             },
 
-            handleGroupReorder: async function (event) {
+
+            async handleGroupReorder(event) {
                 const newOrder = new Set(event.target.sortable.toArray())
                 const group = event.target.dataset.tableViewGroup
 
                 if (this.isDeferredReorderable) {
-                    this.pendingReorderingOrder = newOrder
+                    this.pendingReorderedRecords.set(group, newOrder)
 
                     return
                 }
@@ -147,7 +157,30 @@
                 await this.reorderGroup(group, newOrder)
             },
 
-            reorderGroup: async function (group, order) {
+            async handleMultiGroupReorder(event) {
+                const fromGroup = event.from.dataset.tableViewGroup
+                const fromNewOrder = new Set(event.from.sortable.toArray())
+
+                const toGroup = event.to.dataset.tableViewGroup
+                const toNewOrder = new Set(event.to.sortable.toArray())
+
+                if (this.isDeferredReorderable) {
+                     this.pendingReorderedRecords.set(fromGroup, fromNewOrder)
+
+                     if (fromGroup !== toGroup) {
+                        this.pendingReorderedRecords.set(toGroup, toNewOrder)
+                     }
+
+                     return
+                }
+
+                await this.reorderMultipleGroups(new Map([
+                    [fromGroup, fromNewOrder],
+                    [toGroup, toNewOrder]
+                ]))
+            },
+
+            async reorderGroup(group, order) {
                 if (! order.size) {
                     return
                 }
@@ -161,63 +194,7 @@
                 }
             },
 
-            startMultiGroupReordering: function () {
-                if (this.isLoading) {
-                    return
-                }
-
-                this.isMultiGroupReorderingActive = true
-            },
-
-            stopMultiGroupReordering: function () {
-                this.isMultiGroupReorderingActive = false
-            },
-
-            isMultiGroupReordering: function () {
-                return this.isMultiGroupReorderingActive
-            },
-
-            toggleMultiGroupReordering: async function () {
-                if (this.isLoading) {
-                    return
-                }
-
-                if (this.isMultiGroupReordering()) {
-                    if (this.isDeferredReorderable) {
-                        await this.reorderGroups(this.pendingReorderingOrders)
-
-                        this.pendingReorderingOrders.clear()
-                    }
-
-                    this.stopMultiGroupReordering()
-
-                    return
-                }
-
-                this.startMultiGroupReordering()
-            },
-
-            handleMultiGroupReorder: async function (event) {
-                const fromGroup = event.from.dataset.tableViewGroup
-                const fromNewOrder = new Set(event.from.sortable.toArray())
-
-                const toGroup = event.to.dataset.tableViewGroup
-                const toNewOrder = new Set(event.to.sortable.toArray())
-
-                if (this.isDeferredReorderable) {
-                     this.pendingReorderingOrders.set(fromGroup, fromNewOrder)
-                     this.pendingReorderingOrders.set(toGroup, toNewOrder)
-
-                     return
-                }
-
-                await this.reorderGroups(new Map([
-                    [fromGroup, fromNewOrder],
-                    [toGroup, toNewOrder]
-                ]))
-            },
-
-            reorderGroups: async function (groupOrdersMap) {
+            async reorderMultipleGroups(groupOrdersMap) {
                 if (groupOrdersMap.size === 1) {
                     await this.reorderGroup(...groupOrdersMap.entries().next().value)
 
@@ -228,7 +205,7 @@
 
                 try {
                     const groupedTableViewOrders = Object.fromEntries(
-                      [...this.pendingReorderingOrders.entries()].map(([group, order]) => [group, [...order]])
+                      [...groupOrdersMap.entries()].map(([group, order]) => [group, [...order]])
                     )
 
                     await $wire.reorderTableViewsInGroups(groupedTableViewOrders)
@@ -247,7 +224,7 @@
                 {{ $heading }}
             </h4>
 
-            @if ($isSearchable || $hasFilterButtons)
+            @if ($isSearchable || $isFilterable)
                 <div>
                     <x-filament::link
                         :attributes="
@@ -262,7 +239,7 @@
                             )
                         "
                     >
-                        {{ $resetLabel }}
+                        {{ $getResetLabel() }}
                     </x-filament::link>
 
                     <x-filament::loading-indicator
@@ -282,7 +259,7 @@
 
         @if ($isSearchable)
             @php
-                $searchWireModelAttribute = $searchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$searchDebounce}";
+                $searchWireModelAttribute = $isSearchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$searchDebounce}";
             @endphp
 
             <div x-id="['input']" class="pt-1">
@@ -314,7 +291,7 @@
             </div>
         @endif
 
-        @if ($hasFilterButtons)
+        @if ($isFilterable)
             <div class="flex flex-wrap gap-x-4 gap-y-2">
                 @foreach($tableViewGroups as $group)
                     <x-filament::badge
@@ -324,9 +301,9 @@
                                     'size' => 'sm',
                                     'wire:loading.attr' => 'disabled',
                                     'wire:click' => 'toggleViewManagerFilterButton(\'' . $group->value . '\')',
-                                    'disabled' => ! $hasTableViews($group),
-                                    'color' => $getFilterColorUsing($group, $canRenderTableViewGroup($group)),
-                                    'icon' => $getFilterIconUsing($group, $canRenderTableViewGroup($group)),
+                                    'disabled' => ! filled($tableViews->get($group->value)),
+                                    'color' => $getFilterColor($group, $hasTableViewsVisible($group)),
+                                    'icon' => $getFilterIcon($group, $hasTableViewsVisible($group)),
                                 ])
                             )
                             ->class([
@@ -334,7 +311,7 @@
                             ])
                         "
                     >
-                        {{ $getFilterLabelUsing($group) }}
+                        {{ $getFilterLabel($group) }}
 
                         @if ($tableViewCount = ($tableViews->get($group->value)?->count()))
                             <span
@@ -357,7 +334,6 @@
                 </h5>
 
                 <x-filament-table-views::manager.reordering-indicator
-                    :isCollapsible="$isCollapsible"
                     :isDeferredReorderable="$isDeferredReorderable"
                     :isMultiGroupReorderable="$isMultiGroupReorderable"
                 />
@@ -374,7 +350,9 @@
                 @if ($canRenderTableViewGroup($group))
                     @php
                         $groupValue = $group->value;
-                        $isReorderable = $group !== TableViewGroupEnum::SYSTEM ? $isReorderable : false;
+
+                        $canCollapseGroup = $isCollapsible && $isGroupCollapsible($group);
+                        $canReorderGroup = $isReorderable && $isGroupReorderable($group) && $group !== TableViewGroupEnum::SYSTEM; // temp
                         $tableViewActions = $group !== TableViewGroupEnum::SYSTEM ? $userTableViewActions : $systemTableViewActions
                     @endphp
 
@@ -382,14 +360,14 @@
                         <div class="flex items-center justify-between">
                             <div
                                 @class([
-                                    'cursor-pointer' => $isCollapsible,
+                                    'cursor-pointer' => $canCollapseGroup,
                                     'flex items-center gap-x-2',
                                 ])
-                                @if ($isCollapsible)
+                                @if ($canCollapseGroup)
                                     x-on:click="toggleCollapsedGroup(@js($groupValue))"
                                 @endif
                             >
-                                @if ($groupHeading = $getGroupHeadingUsing($group))
+                                @if ($groupHeading = $getGroupHeading($group))
                                     <h5
                                         class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
                                     >
@@ -397,7 +375,7 @@
                                     </h5>
                                 @endif
 
-                                @if ($isCollapsible)
+                                @if ($canCollapseGroup)
                                     <x-filament::icon
                                         icon="heroicon-o-chevron-up"
                                         class="h-4 w-4 text-gray-500 dark:text-gray-400"
@@ -406,24 +384,27 @@
                                 @endif
                             </div>
 
-                            @if ($isReorderable && ! $isMultiGroupReorderable)
-                                <x-filament-table-views::manager.reordering-indicator
-                                    :groupValue="$groupValue"
-                                    :isCollapsible="$isCollapsible"
-                                    :isDeferredReorderable="$isDeferredReorderable"
-                                    :isMultiGroupReorderable="$isMultiGroupReorderable"
-                                />
+
+                            @if ($canReorderGroup && ! $isMultiGroupReorderable)
+                                <div class="px-2">
+                                    <x-filament-table-views::manager.reordering-indicator
+                                        :groupValue="$groupValue"
+                                        :isCollapsible="$canCollapseGroup"
+                                        :isDeferredReorderable="$isDeferredReorderable"
+                                        :isMultiGroupReorderable="$isMultiGroupReorderable"
+                                    />
+                                </div>
                             @endif
                         </div>
 
                         <div
                             class="space-y-1"
-                            @if ($isCollapsible)
+                            @if ($isGroupCollapsible($group))
                                 x-show="! isGroupCollapsed(@js($groupValue))"
                                 x-bind:aria-expanded="! isGroupCollapsed(@js($groupValue))"
                                 aria-expanded="true"
                             @endif
-                            @if ($isReorderable)
+                            @if ($canReorderGroup)
                                 x-sortable
                                 x-sortable-animation="400s"
                                 data-table-view-group="{{ $groupValue }}"
@@ -443,8 +424,7 @@
                                     :tableView="$tableView"
                                     :activeTableViewKey="$activeTableViewKey"
                                     :actions="$tableViewActions"
-                                    :isReorderable="$isReorderable"
-                                    :isMultiGroupReorderable="$isMultiGroupReorderable"
+                                    :isReorderable="$canReorderGroup && $isRecordReorderable($tableView->getRecord())"
                                 />
                             @endforeach
                         </div>

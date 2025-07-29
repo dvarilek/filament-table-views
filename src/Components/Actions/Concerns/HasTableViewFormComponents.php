@@ -263,7 +263,7 @@ trait HasTableViewFormComponents
         return $component;
     }
 
-    protected function getExtraFormComponentBefore(string $componentName): null | Field | Component
+    protected function getExtraFormComponentBefore(string $componentName): null|Field|Component
     {
         return $this->extraFormComponents[$componentName] ?? null;
     }

@@ -1,6 +1,6 @@
 @props([
     'groupValue' => null,
-    'isCollapsible',
+    'isCollapsible' => false,
     'isDeferredReorderable',
     'isMultiGroupReorderable'
 ])
@@ -14,27 +14,18 @@
 <div
     class="flex items-center gap-x-2"
     x-bind:class="isLoading ? null : 'cursor-pointer'"
-    @if ($isCollapsible)
+    x-on:click="toggleReordering(@js($groupValue))"
+    @if ($isCollapsible && ! $isMultiGroupReorderable)
         x-cloak
-        x-show="! isGroupCollapsed('{{ $groupValue }}')"
-    @endif
-    @if ($isMultiGroupReorderable)
-        x-on:click="toggleMultiGroupReordering()"
-    @else
-        style="padding-right: 0.5rem"
-        x-on:click="toggleGroupReordering('{{ $groupValue }}')"
+        x-show="! isGroupCollapsed(@js($groupValue))"
     @endif
 >
     <div
         x-cloak
-        @if ($isMultiGroupReorderable)
-            x-show="isMultiGroupReordering()"
-        @else
-            x-show="isGroupReordering('{{ $groupValue }}')"
-        @endif
+        x-show="isReorderingActive(@js($groupValue))"
         class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
         x-text="isLoading ? @js($loadingLabel) : (
-                (isDeferredReorderable && (isMultiGroupReorderable ? pendingReorderingOrders.size : pendingReorderingOrder.size))
+                (isDeferredReorderable && hasPendingReorderedRecords())
                     ? @js($confirmReorderingLabel)
                     : @js($stopReorderingLabel)
             )"
@@ -46,9 +37,9 @@
     <div
         x-cloak
         @if ($isMultiGroupReorderable)
-            x-show="!isMultiGroupReordering()"
+            x-show="! isReorderingActive(@js($groupValue))"
         @else
-            x-show="!isGroupReordering('{{ $groupValue }}') && activeReorderingGroup === null"
+            x-show="! isReorderingActive(@js($groupValue)) && ! activeReorderingGroup"
         @endif
     >
         <x-filament::icon
@@ -59,18 +50,14 @@
 
     <div
         x-cloak
-        @if ($isMultiGroupReorderable)
-            x-show="isMultiGroupReordering()"
-        @else
-            x-show="isGroupReordering('{{ $groupValue }}')"
-        @endif
+        x-show="isReorderingActive(@js($groupValue))"
     >
         <x-filament::loading-indicator
             :attributes="
                 \Filament\Support\prepare_inherited_attributes(
                     new \Illuminate\View\ComponentAttributeBag([
                         'wire:loading.delay.' . config('filament.livewire_loading_delay', 'default') => '',
-                        'wire:target' => $isMultiGroupReorderable ? 'reorderTableViewsInGroups, reorderTableViewsInGroup' : 'reorderTableViewsInGroup',
+                        'wire:target' => 'reorderTableViewsInGroups, reorderTableViewsInGroup',
                     ])
                 )
                     ->class([
@@ -80,37 +67,20 @@
         />
 
         @if ($isDeferredReorderable)
-            @if ($isMultiGroupReorderable)
-                <x-filament::icon
-                    x-cloak
-                    x-show="! pendingReorderingOrders.size"
-                    icon="heroicon-o-x-mark"
-                    class="h-5 w-5 text-gray-500 dark:text-gray-400"
-                />
+            <x-filament::icon
+                x-cloak
+                x-show="! hasPendingReorderedRecords()"
+                icon="heroicon-o-x-mark"
+                class="h-5 w-5 text-gray-500 dark:text-gray-400"
+            />
 
-                <x-filament::icon-button
-                    x-cloak
-                    x-show="! isLoading && pendingReorderingOrders.size"
-                    icon-color="primary"
-                    icon="heroicon-o-check"
-                    class="h-5 w-5"
-                />
-            @else
-                <x-filament::icon
-                    x-cloak
-                    x-show="! pendingReorderingOrder.size"
-                    icon="heroicon-o-x-mark"
-                    class="h-5 w-5 text-gray-500 dark:text-gray-400"
-                />
-
-                <x-filament::icon-button
-                    x-cloak
-                    x-show="! isLoading && pendingReorderingOrder.size"
-                    icon-color="primary"
-                    icon="heroicon-o-check"
-                    class="h-5 w-5"
-                />
-            @endif
+            <x-filament::icon-button
+                x-cloak
+                x-show="! isLoading && hasPendingReorderedRecords()"
+                icon-color="primary"
+                icon="heroicon-o-check"
+                class="h-5 w-5"
+            />
         @else
             <x-filament::icon
                 x-cloak

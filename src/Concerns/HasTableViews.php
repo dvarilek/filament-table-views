@@ -11,6 +11,7 @@ use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\ToggleDefaultTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\ToggleFavoriteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\TogglePublicTableViewAction;
+use Dvarilek\FilamentTableViews\Components\Manager\TableViewManager;
 use Dvarilek\FilamentTableViews\Components\TableView\BaseTableView;
 use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Components\TableView\UserView;
@@ -22,6 +23,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -69,139 +71,28 @@ trait HasTableViews
         ];
     }
 
-    public function getTableViewManagerSearchLabel(): ?string
+    public function getTableViewManager(): TableViewManager
     {
-        return __('filament-table-views::toolbar.actions.manage-table-views.search.label');
-    }
-
-    public function getTableViewManagerSearchPlaceholder(): ?string
-    {
-        return __('filament-table-views::toolbar.actions.manage-table-views.search.placeholder');
-    }
-
-    public function hasTableViewManagerSearch(): bool
-    {
-        return true;
-    }
-
-    public function hasTableViewManagerFilterButtons(): bool
-    {
-        return true;
-    }
-
-    public function isTableViewManagerCollapsible(): bool
-    {
-        return true;
-    }
-
-    public function isTableViewManagerReorderable(): bool
-    {
-        return true;
-    }
-
-    public function isTableViewManagerDeferredReorderable(): bool
-    {
-        return true;
-    }
-
-    public function isTableViewManagerMultiGroupReorderable(): bool
-    {
-        return true;
-    }
-
-    public function getTableViewManagerSearchDebounce(): string
-    {
-        return '500ms';
-    }
-
-    public function getTableViewManagerSearchOnBlur(): bool
-    {
-        return false;
-    }
-
-    public function getTableViewManagerHeading(): string
-    {
-        return __('filament-table-views::toolbar.actions.manage-table-views.label');
-    }
-
-    public function getTableViewManagerWidth(): MaxWidth
-    {
-        return MaxWidth::Small;
-    }
-
-    public function getTableViewManagerGroupHeading(TableViewGroupEnum $group): string
-    {
-        return match ($group) {
-            TableViewGroupEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.groups.favorite'),
-            TableViewGroupEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.groups.private'),
-            TableViewGroupEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.groups.public'),
-            TableViewGroupEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.groups.system')
-        };
-    }
-
-    public function getTableViewManagerFilterLabel(TableViewGroupEnum $group): string
-    {
-        return match ($group) {
-            TableViewGroupEnum::FAVORITE => __('filament-table-views::toolbar.actions.manage-table-views.filters.favorite'),
-            TableViewGroupEnum::PRIVATE => __('filament-table-views::toolbar.actions.manage-table-views.filters.private'),
-            TableViewGroupEnum::PUBLIC => __('filament-table-views::toolbar.actions.manage-table-views.filters.public'),
-            TableViewGroupEnum::SYSTEM => __('filament-table-views::toolbar.actions.manage-table-views.filters.system')
-        };
-    }
-
-    public function getTableViewManagerFilterColor(TableViewGroupEnum $group, bool $isActive): string
-    {
-        return $isActive ? 'primary' : 'gray';
-    }
-
-    public function getTableViewManagerFilterIcon(TableViewGroupEnum $group, bool $isActive): string
-    {
-        return $isActive ? 'heroicon-o-eye' : 'heroicon-o-eye-slash';
+        return TableViewManager::make()
+            ->livewire($this);
     }
 
     /**
-     * @return list<TableViewGroupEnum>
+     * @return class-string<Model>
      */
-    public function getTableViewManagerDefaultCollapsedGroups(): array
+    protected static function getTableViewModelType(): string
     {
-        return [
-
-        ];
-    }
-
-    public function getTableViewManagerEmptyStatePlaceholder(): ?string
-    {
-        return $this->tableViewManagerSearch !== ''
-            ? __('filament-table-views::toolbar.actions.manage-table-views.empty-state.search_empty_state')
-            : __('filament-table-views::toolbar.actions.manage-table-views.empty-state.no_views_empty_state');
-    }
-
-    public function getTableViewManagerResetLabel(): string
-    {
-        return __('filament-table-views::toolbar.actions.manage-table-views.reset_label');
-    }
-
-    public function persistsActiveTableViewInSession(): bool
-    {
-        return config('filament-table-views.table_views.persists_active_table_view_in_session', false);
-    }
-
-    /**
-     * @return list<TableViewGroupEnum> | Closure(TableViewGroupEnum): int
-     */
-    public function getTableViewManagerGroupOrder(): array | Closure
-    {
-        return [
-            TableViewGroupEnum::FAVORITE,
-            TableViewGroupEnum::PRIVATE,
-            TableViewGroupEnum::PUBLIC,
-            TableViewGroupEnum::SYSTEM,
-        ];
+        return static::getResource()::getModel();
     }
 
     public function toggleViewManagerFilterButton(TableViewGroupEnum $group): void
     {
         $this->tableViewManagerActiveFilters[$group->value] = ! $this->tableViewManagerActiveFilters[$group->value];
+    }
+
+    public function isTableViewManagerSearchEmpty(): bool
+    {
+        return $this->tableViewManagerSearch === '';
     }
 
     public function resetTableViewManager(): void
@@ -218,7 +109,13 @@ trait HasTableViews
 
     public function reorderTableViewsInGroup(TableViewGroupEnum $group, array $order): void
     {
-        if (! $this->isTableViewManagerReorderable()) {
+        $tableViewManager = $this->getTableViewManager();
+
+        if (! $tableViewManager->isReorderable()) {
+            return;
+        }
+
+        if (! $tableViewManager->isGroupReorderable($group)) {
             return;
         }
 
@@ -232,7 +129,7 @@ trait HasTableViews
             return;
         }
 
-        DB::transaction(function () use ($user, $order, $group) {
+        DB::transaction(function () use ($user, $order, $group, $tableViewManager) {
             $configRelation = $user->tableViewConfigs();
 
             $configModel = $configRelation->getRelated();
@@ -243,11 +140,17 @@ trait HasTableViews
 
             $groupTableViewKeys = $this->groupTableViewsByType(collect($this->userTableViews))
                 ->get($group->value, collect())
-                ->reduce(function (array $carry, UserView $userView) use ($order) {
-                    $key = $userView->getTableView()->getKey();
+                ->reduce(function (array $carry, UserView $userView) use ($order, $tableViewManager) {
+                    $record = $userView->getRecord();
 
-                    if (in_array($key, $order)) {
-                        $carry[] = $key;
+                    if (! $tableViewManager->isRecordReorderable($record)) {
+                        return $carry;
+                    }
+
+                    $recordKey = $record->getKey();
+
+                    if (in_array($recordKey, $order)) {
+                        $carry[] = $recordKey;
                     }
 
                     return $carry;
@@ -261,9 +164,9 @@ trait HasTableViews
                 ->whereIn($savedTableViewForeignKeyName, array_values($order))
                 ->update([
                     'order' => DB::raw(
-                        'case ' . collect($order)
-                            ->map(fn ($recordKey, int $recordIndex): string => 'when ' . $wrappedModelKeyName . ' = ' . DB::getPdo()->quote($recordKey) . ' then ' . ($recordIndex + 1))
-                            ->implode(' ') . ' end'
+                        'case '.collect($order)
+                            ->map(fn ($recordKey, int $recordIndex): string => 'when '.$wrappedModelKeyName.' = '.DB::getPdo()->quote($recordKey).' then '.($recordIndex + 1))
+                            ->implode(' ').' end'
                     ),
                 ]);
         });
@@ -273,17 +176,21 @@ trait HasTableViews
     }
 
     // TODO:
-    //      Add isReorderable for individual records (maybe even groups)
-    //      Add isCollapsible for individual groups
     //      Make other groups visible even if they are empty
     //      Add tracking for updated table views
 
-    // TODO: Finish this, it currently isn't possible to drag from one group to another when there aren't any views in the other - this should be addressed for multiGroupReorderable
-    //       Add isGroupReorderable and isGroupCollapsible with the group being passed into there
-
-    public function reorderTableViewsInGroups(array $groupedTableViewOrders): void
+    /**
+     * @param  array<value-of<TableViewGroupEnum>, list<mixed>> $groupedReorderedRecordKeys
+     */
+    public function reorderTableViewsInGroups(array $groupedReorderedRecordKeys): void
     {
-        if (! $this->isTableViewManagerReorderable() && ! $this->isTableViewManagerMultiGroupReorderable()) {
+        $tableViewManager = $this->getTableViewManager();
+
+        if (! $tableViewManager->isReorderable()) {
+            return;
+        }
+
+        if (! $tableViewManager->isMultiGroupReorderable()) {
             return;
         }
 
@@ -291,7 +198,7 @@ trait HasTableViews
             return;
         }
 
-        DB::transaction(function () use ($user, $groupedTableViewOrders) {
+        DB::transaction(function () use ($user, $groupedReorderedRecordKeys, $tableViewManager) {
             $configRelation = $user->tableViewConfigs();
 
             $configModel = $configRelation->getRelated();
@@ -307,10 +214,14 @@ trait HasTableViews
             $userTableViews = collect($this->userTableViews);
             $groupedUserTableViews = $this->groupTableViewsByType($userTableViews);
 
-            foreach ($groupedTableViewOrders as $group => $order) {
+            foreach ($groupedReorderedRecordKeys as $group => $order) {
                 $group = TableViewGroupEnum::tryFrom($group);
 
                 if (! $group || $group === TableViewGroupEnum::SYSTEM) {
+                    continue;
+                }
+
+                if (! $tableViewManager->isGroupReorderable($group)) {
                     continue;
                 }
 
@@ -327,14 +238,20 @@ trait HasTableViews
                 /* @var list<mixed> $originalTableViewKeys */
                 $originalTableViewKeys = $groupedUserTableViews
                     ->get($group->value, collect())
-                    ->map(fn (UserView $userView) => $userView->getTableView()->getKey())
+                    ->map(fn (UserView $userView) => $userView->getRecord()->getKey())
                     ->toArray();
 
                 $authorizedTableViewKeysForUpdate = $userTableViews
-                    ->reduce(function (array $carry, UserView $userView) use ($order, $originalTableViewKeys) {
-                        $tableViewKey = $userView->getTableView()->getKey();
+                    ->reduce(function (array $carry, UserView $userView) use ($order, $originalTableViewKeys, $authorizationMethod, $tableViewManager) {
+                        $record = $userView->getRecord();
 
-                        if (! in_array($tableViewKey, $order) || in_array($tableViewKey, $originalTableViewKeys)) {
+                        if (! $tableViewManager->isRecordReorderable($record)) {
+                            return $carry;
+                        }
+
+                        $recordKey = $record->getKey();
+
+                        if (!in_array($recordKey, $order) || in_array($recordKey, $originalTableViewKeys)) {
                             return $carry;
                         }
 
@@ -343,7 +260,7 @@ trait HasTableViews
                         //     return $carry;
                         // }
 
-                        $carry[] = $tableViewKey;
+                        $carry[] = $recordKey;
 
                         return $carry;
                     }, []);
@@ -355,17 +272,17 @@ trait HasTableViews
 
                     if ($group === TableViewGroupEnum::FAVORITE) {
                         $authorizedRecordsForUpdate->update([
-                            'is_favorite' => true,
+                            'is_favorite' => true
                         ]);
                     } else {
                         $authorizedRecordsForUpdate->update([
-                            'is_favorite' => false,
+                            'is_favorite' => false
                         ]);
 
                         $savedTableViewModel
                             ->whereIn($savedTableViewModelKeyName, array_values($authorizedTableViewKeysForUpdate))
                             ->update([
-                                'is_public' => $group === TableViewGroupEnum::PUBLIC,
+                                'is_public' => $group === TableViewGroupEnum::PUBLIC
                             ]);
                     }
                 }
@@ -375,10 +292,10 @@ trait HasTableViews
                     ->whereIn($savedTableViewModelForeignKeyName, array_values($order))
                     ->update([
                         'order' => DB::raw(
-                            'case ' . collect($order)
-                                ->map(fn ($recordKey, int $recordIndex): string => 'when ' . $wrappedModelKeyName . ' = ' . DB::getPdo()->quote($recordKey) . ' then ' . ($recordIndex + 1))
-                                ->implode(' ') . ' end'
-                        ),
+                            'case '.collect($order)
+                                ->map(fn ($recordKey, int $recordIndex): string => 'when '.$wrappedModelKeyName.' = '.DB::getPdo()->quote($recordKey).' then '.($recordIndex + 1))
+                                ->implode(' ').' end'
+                        )
                     ]);
             }
         });
@@ -481,7 +398,7 @@ trait HasTableViews
     /**
      * @return array<string, TableView>
      */
-    public function getSystemTableViews(): array
+    protected function getSystemTableViews(): array
     {
         return collect($this->getTableViews())
             ->mapWithKeys(static function (TableView $tableView) {
@@ -535,7 +452,7 @@ trait HasTableViews
     /**
      * @return ($shouldGroupByTableViewType is true ? Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>> : Collection<string, BaseTableView>)
      */
-    protected function getAllTableViews(bool $shouldGroupByTableViewType = false): Collection
+    public function getAllTableViews(bool $shouldGroupByTableViewType = false): Collection
     {
         $tableViews = collect($this->getSystemTableViews() + $this->userTableViews)
             ->filter(static fn (BaseTableView $tableView) => $tableView->isVisible());
@@ -550,7 +467,7 @@ trait HasTableViews
     protected function groupTableViewsByType(Collection $tableViews): Collection
     {
         return $tableViews
-            ->groupBy(fn (TableView | UserView $tableView): string => match (true) {
+            ->groupBy(fn (TableView|UserView $tableView): string => match (true) {
                 $tableView instanceof TableView => TableViewGroupEnum::SYSTEM->value,
                 $tableView->isFavorite() => TableViewGroupEnum::FAVORITE->value,
                 $tableView->isPublic() => TableViewGroupEnum::PUBLIC->value,
@@ -562,7 +479,7 @@ trait HasTableViews
      * @param  Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>  $tableViews
      * @return Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>
      */
-    protected function filterTableViewManagerItems(Collection $tableViews): Collection
+    public function filterTableViewManagerTableViews(Collection $tableViews): Collection
     {
         return $tableViews
             ->filter(
@@ -597,17 +514,9 @@ trait HasTableViews
         return $this->cachedActiveTableView = $activeTableView;
     }
 
-    /**
-     * @return class-string<Model>
-     */
-    protected static function getTableViewModelType(): string
-    {
-        return static::getResource()::getModel();
-    }
-
     public function bootedHasTableViews(): void
     {
-        $shouldPersistActiveTableViewInSession = $this->persistsActiveTableViewInSession();
+        $shouldPersistActiveTableViewInSession = $this->getTableViewManager()->persistsActiveTableViewInSession();
         $activeTableViewSessionKey = $this->getActiveTableViewSessionKey();
 
         if ($this->activeTableViewKey === null) {
@@ -729,7 +638,7 @@ trait HasTableViews
         }
     }
 
-    public function removeActiveTableView(): void
+    protected function removeActiveTableView(): void
     {
         $this->activeTableViewKey = null;
 
@@ -764,7 +673,7 @@ trait HasTableViews
 
     public function updatedActiveTableView(): void
     {
-        if ($this->persistsActiveTableViewInSession()) {
+        if ($this->getTableViewManager()->persistsActiveTableViewInSession()) {
             session()->put(
                 $this->getActiveTableViewSessionKey(),
                 $this->activeTableViewKey,
@@ -774,7 +683,7 @@ trait HasTableViews
         $this->resetPage();
     }
 
-    public function applyActiveTableViewToTableQuery(Builder $query): void
+    protected function applyActiveTableViewToTableQuery(Builder $query): void
     {
         $activeTableView = $this->getActiveTableView();
 
@@ -898,6 +807,6 @@ trait HasTableViews
     {
         $table = md5($this::class);
 
-        return "filament-table-views::active-table-view.{$table}_sort";
+        return "filament-table-views::active-table-view.{$table}";
     }
 }

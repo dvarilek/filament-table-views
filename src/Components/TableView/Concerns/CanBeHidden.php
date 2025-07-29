@@ -14,14 +14,14 @@ trait CanBeHidden
 {
     protected mixed $authorization = null;
 
-    protected bool | Closure $isHidden = false;
+    protected bool|Closure $isHidden = false;
 
-    protected bool | Closure $isVisible = true;
+    protected bool|Closure $isVisible = true;
 
     /**
      * @param  Model | class-string | array<mixed> | null  $arguments
      */
-    public function authorize(mixed $abilities, Model | string | array | null $arguments = null): static
+    public function authorize(mixed $abilities, Model|string|array|null $arguments = null): static
     {
         if ($abilities instanceof BackedEnum) {
             $abilities = $abilities->value;
@@ -44,7 +44,7 @@ trait CanBeHidden
      * @param  string | BackedEnum | array<string>  $abilities
      * @param  Model | array<mixed> | null  $arguments
      */
-    public function authorizeAny(string | BackedEnum | array $abilities, Model | array | null $arguments = null): static
+    public function authorizeAny(string|BackedEnum|array $abilities, Model|array|null $arguments = null): static
     {
         if ($abilities instanceof BackedEnum) {
             $abilities = $abilities->value;
@@ -68,14 +68,14 @@ trait CanBeHidden
         return $arguments;
     }
 
-    public function hidden(bool | Closure $condition = true): static
+    public function hidden(bool|Closure $condition = true): static
     {
         $this->isHidden = $condition;
 
         return $this;
     }
 
-    public function visible(bool | Closure $condition = true): static
+    public function visible(bool|Closure $condition = true): static
     {
         $this->isVisible = $condition;
 

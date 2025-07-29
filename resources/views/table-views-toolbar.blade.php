@@ -8,7 +8,6 @@
 
 @if (in_array(HasTableViews::class, class_uses_recursive($this)))
     @php
-        unset($this->userTableViews);
         $livewireId = $this->getId();
 
         $tableViews = $this->getAllTableViews(shouldGroupByTableViewType: true);
@@ -23,6 +22,8 @@
 
         $activeTableViewKey = $this->activeTableViewKey;
         $activeTableView = $this->getActiveTableView();
+
+        $tableViewManager = $this->getTableViewManager();
     @endphp
 
     <div
@@ -79,41 +80,13 @@
 
             <x-filament::dropdown
                 placement="bottom-start"
-                :width="$this->getTableViewManagerWidth()"
+                :width="$tableViewManager->getWidth()"
             >
                 <x-slot name="trigger">
                     {{ $this->manageTableViewsAction }}
                 </x-slot>
 
-                {{-- the manager should be refactored into a view component - this way the usings can be handled more nicely --}}
-                <x-filament-table-views::manager
-                    :livewireId="$livewireId"
-                    :tableViews="$tableViews"
-                    :filterTableViewsUsing="fn (Collection $tableViews) => $this->filterTableViewManagerItems($tableViews)"
-                    :tableViewGroupOrder="$this->getTableViewManagerGroupOrder()"
-                    :activeTableViewKey="$activeTableViewKey"
-                    :heading="$this->getTableViewManagerHeading()"
-                    :getGroupHeadingUsing="fn (TableViewGroupEnum $group) => $this->getTableViewManagerGroupHeading($group)"
-                    :getFilterLabelUsing="fn (TableViewGroupEnum $group) => $this->getTableViewManagerFilterLabel($group)"
-                    :getFilterColorUsing="fn (TableViewGroupEnum $group, bool $isActive) => $this->getTableViewManagerFilterColor($group, $isActive)"
-                    :getFilterIconUsing="fn (TableViewGroupEnum $group, bool $isActive) => $this->getTableViewManagerFilterIcon($group, $isActive)"
-                    :isSearchable="$this->hasTableViewManagerSearch()"
-                    :searchDebounce="$this->getTableViewManagerSearchDebounce()"
-                    :searchOnBlur="$this->getTableViewManagerSearchOnBlur()"
-                    :searchLabel="$this->getTableViewManagerSearchLabel()"
-                    :searchPlaceholder="$this->getTableViewManagerSearchPlaceholder()"
-                    :emptyStatePlaceholder="$this->getTableViewManagerEmptyStatePlaceholder()"
-                    :hasFilterButtons="$this->hasTableViewManagerFilterButtons()"
-                    :activeFilters="$this->tableViewManagerActiveFilters"
-                    :resetLabel="$this->getTableViewManagerResetLabel()"
-                    :systemTableViewActions="$this->getTableViewManagerSystemActions()"
-                    :userTableViewActions="$this->getTableViewManagerUserActions()"
-                    :isCollapsible="$this->isTableViewManagerCollapsible()"
-                    :defaultCollapsedGroups="$this->getTableViewManagerDefaultCollapsedGroups()"
-                    :isReorderable="$this->isTableViewManagerReorderable()"
-                    :isDeferredReorderable="$this->isTableViewManagerDeferredReorderable()"
-                    :isMultiGroupReorderable="$this->isTableViewManagerMultiGroupReorderable()"
-                />
+                {{ $tableViewManager }}
             </x-filament::dropdown>
         </div>
     </div>

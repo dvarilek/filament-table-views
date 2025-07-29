@@ -16,46 +16,46 @@ class TableView extends BaseTableView
     /**
      * @var array<string, mixed> | Closure | null
      */
-    protected array | Closure | null $tableFilters = null;
+    protected array|Closure|null $tableFilters = null;
 
-    protected string | Closure | null $tableSortColumn = null;
+    protected string|Closure|null $tableSortColumn = null;
 
-    protected string | Closure | null $tableSortDirection = null;
+    protected string|Closure|null $tableSortDirection = null;
 
-    protected string | Closure | null $tableGrouping = null;
+    protected string|Closure|null $tableGrouping = null;
 
-    protected string | Closure | null $tableGroupingDirection = null;
+    protected string|Closure|null $tableGroupingDirection = null;
 
-    protected string | Closure | null $tableSearch = null;
-
-    /**
-     * @var array<string, mixed> | Closure
-     */
-    protected array | Closure $tableColumnSearches = [];
+    protected string|Closure|null $tableSearch = null;
 
     /**
      * @var array<string, mixed> | Closure
      */
-    protected array | Closure $toggledTableColumns = [];
+    protected array|Closure $tableColumnSearches = [];
+
+    /**
+     * @var array<string, mixed> | Closure
+     */
+    protected array|Closure $toggledTableColumns = [];
 
     /**
      * @var list<string> | Closure
      */
-    protected array | Closure $hiddenTableColumns = [];
+    protected array|Closure $hiddenTableColumns = [];
 
     /**
      * @var list<string> | Closure
      */
-    protected array | Closure $visibleTableColumns = [];
+    protected array|Closure $visibleTableColumns = [];
 
-    protected string | Closure | null $activeTab = null;
+    protected string|Closure|null $activeTab = null;
 
-    public function __construct(string | Closure | null $label = null)
+    public function __construct(string|Closure|null $label = null)
     {
         $this->label($label);
     }
 
-    public static function make(string | Closure | null $label = null): static
+    public static function make(string|Closure|null $label = null): static
     {
         $static = app(static::class, ['label' => $label]);
         $static->configure();
@@ -74,14 +74,14 @@ class TableView extends BaseTableView
      * @param  array<string, mixed> | Closure | null  $tableFilters
      * @return $this
      */
-    public function tableFilters(array | Closure | null $tableFilters = null): static
+    public function tableFilters(array|Closure|null $tableFilters = null): static
     {
         $this->tableFilters = $tableFilters;
 
         return $this;
     }
 
-    public function tableSort(string | Closure | null $tableSortColumn = null, string | Closure | null $tableSortDirection = null): static
+    public function tableSort(string|Closure|null $tableSortColumn = null, string|Closure|null $tableSortDirection = null): static
     {
         $this->tableSortColumn = $tableSortColumn;
         $this->tableSortDirection = $tableSortDirection;
@@ -89,7 +89,7 @@ class TableView extends BaseTableView
         return $this;
     }
 
-    public function tableGrouping(string | Closure | null $tableGrouping = null, string | Closure | null $tableGroupingDirection = null): static
+    public function tableGrouping(string|Closure|null $tableGrouping = null, string|Closure|null $tableGroupingDirection = null): static
     {
         $this->tableGrouping = $tableGrouping;
         $this->tableGroupingDirection = $tableGroupingDirection;
@@ -97,7 +97,7 @@ class TableView extends BaseTableView
         return $this;
     }
 
-    public function tableSearch(string | Closure | null $tableSearch = null): static
+    public function tableSearch(string|Closure|null $tableSearch = null): static
     {
         $this->tableSearch = $tableSearch;
 
@@ -108,7 +108,7 @@ class TableView extends BaseTableView
      * @param  array<string, mixed> | Closure  $tableColumnSearches
      * @return $this
      */
-    public function tableColumnSearches(array | Closure $tableColumnSearches = []): static
+    public function tableColumnSearches(array|Closure $tableColumnSearches = []): static
     {
         $this->tableColumnSearches = $tableColumnSearches;
 
@@ -119,7 +119,7 @@ class TableView extends BaseTableView
      * @param  array<string, mixed> | Closure  $columns
      * @return $this
      */
-    public function toggledTableColumns(array | Closure $columns = []): static
+    public function toggledTableColumns(array|Closure $columns = []): static
     {
         $this->toggledTableColumns = $columns;
 
@@ -130,7 +130,7 @@ class TableView extends BaseTableView
      * @param  list<string> | Closure  $columns
      * @return $this
      */
-    public function visibleTableColumns(array | Closure $columns = []): static
+    public function visibleTableColumns(array|Closure $columns = []): static
     {
         $this->visibleTableColumns = $columns;
 
@@ -141,14 +141,14 @@ class TableView extends BaseTableView
      * @param  list<string> | Closure  $columns
      * @return $this
      */
-    public function hiddenTableColumns(array | Closure $columns = []): static
+    public function hiddenTableColumns(array|Closure $columns = []): static
     {
         $this->hiddenTableColumns = $columns;
 
         return $this;
     }
 
-    public function activeTab(string | Closure | null $activeTab = null): static
+    public function activeTab(string|Closure|null $activeTab = null): static
     {
         $this->activeTab = $activeTab;
 

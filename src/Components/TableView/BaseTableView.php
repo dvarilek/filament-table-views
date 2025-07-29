@@ -19,36 +19,36 @@ abstract class BaseTableView extends Component
     use Concerns\CanBeHidden;
     use HasExtraAttributes;
 
-    protected string | Closure | null $label = null;
+    protected string|Closure|null $label = null;
 
-    protected string | Closure | null $tooltip = null;
+    protected string|Closure|null $tooltip = null;
 
-    protected string | Htmlable | Closure | null $icon = null;
+    protected string|Htmlable|Closure|null $icon = null;
 
     /**
      * @var string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | Closure | null
      */
-    protected string | array | Closure | null $color = null;
+    protected string|array|Closure|null $color = null;
 
-    protected int | string | Closure | null $identifier = null;
+    protected int|string|Closure|null $identifier = null;
 
-    protected bool | Closure $isDefault = false;
+    protected bool|Closure $isDefault = false;
 
-    public function label(string | Closure | null $label): static
+    public function label(string|Closure|null $label): static
     {
         $this->label = $label;
 
         return $this;
     }
 
-    public function icon(string | Htmlable | Closure | null $icon): static
+    public function icon(string|Htmlable|Closure|null $icon): static
     {
         $this->icon = $icon;
 
         return $this;
     }
 
-    public function tooltip(string | Closure | null $tooltip): static
+    public function tooltip(string|Closure|null $tooltip): static
     {
         $this->tooltip = $tooltip;
 
@@ -58,21 +58,21 @@ abstract class BaseTableView extends Component
     /**
      * @param  string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | Closure | null  $color
      */
-    public function color(string | array | Closure | null $color): static
+    public function color(string|array|Closure|null $color): static
     {
         $this->color = $color;
 
         return $this;
     }
 
-    public function identifier(int | string | Closure $value): static
+    public function identifier(int|string|Closure $value): static
     {
         $this->identifier = $value;
 
         return $this;
     }
 
-    public function default(bool | Closure $condition = true): static
+    public function default(bool|Closure $condition = true): static
     {
         $this->isDefault = $condition;
 
@@ -84,7 +84,7 @@ abstract class BaseTableView extends Component
         return $this->evaluate($this->label);
     }
 
-    public function getIcon(): string | Htmlable | null
+    public function getIcon(): string|Htmlable|null
     {
         $icon = $this->evaluate($this->icon);
 
@@ -104,7 +104,7 @@ abstract class BaseTableView extends Component
     /**
      * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | null
      */
-    public function getColor(): string | array | null
+    public function getColor(): string|array|null
     {
         return $this->evaluate($this->color);
     }

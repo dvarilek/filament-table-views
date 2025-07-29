@@ -13,85 +13,85 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserView extends BaseTableView
 {
-    protected ?SavedTableView $cachedTableView = null;
+    protected ?SavedTableView $cachedRecord = null;
 
-    protected SavedTableView | Closure | null $tableView = null;
+    protected SavedTableView|Closure|null $record = null;
 
-    public function __construct(Model | Closure | null $tableView = null)
+    public function __construct(Model|Closure|null $record = null)
     {
-        $this->tableView($tableView);
+        $this->record($record);
     }
 
-    public static function make(Model | Closure | null $tableView = null): static
+    public static function make(Model|Closure|null $record = null): static
     {
-        $static = app(static::class, ['tableView' => $tableView]);
+        $static = app(static::class, ['record' => $record]);
         $static->configure();
 
         return $static;
     }
 
-    public function tableView(SavedTableView | Closure | null $tableView = null): static
+    public function record(SavedTableView|Closure|null $record = null): static
     {
-        $this->tableView = $tableView;
+        $this->record = $record;
 
         return $this;
     }
 
     public function getLabel(): string
     {
-        return parent::getLabel() ?? $this->getTableView()->name;
+        return parent::getLabel() ?? $this->getRecord()->name;
     }
 
-    public function getIcon(): string | Htmlable | null
+    public function getIcon(): string|Htmlable|null
     {
-        return parent::getIcon() ?? $this->getTableView()->icon;
+        return parent::getIcon() ?? $this->getRecord()->icon;
     }
 
     /**
      * @return string | array{50: string, 100: string, 200: string, 300: string, 400: string, 500: string, 600: string, 700: string, 800: string, 900: string, 950: string} | null
      */
-    public function getColor(): string | array | null
+    public function getColor(): string|array|null
     {
-        return parent::getColor() ?? $this->getTableView()->color;
+        return parent::getColor() ?? $this->getRecord()->color;
     }
 
     public function getIdentifier(): string
     {
-        return (string) ($this->evaluate($this->identifier) ?? $this->getTableView()->getKey());
+        return (string) ($this->evaluate($this->identifier) ?? $this->getRecord()->getKey());
     }
 
     public function isPublic(): bool
     {
-        return $this->getTableView()->isPublic();
+        return $this->getRecord()->isPublic();
     }
 
     public function isFavorite(): bool
     {
-        return $this->getTableView()->isFavoriteForCurrentUser();
+        return $this->getRecord()->isFavoriteForCurrentUser();
     }
 
     public function isDefault(): bool
     {
-        return parent::isDefault() || $this->getTableView()->isDefaultForCurrentUser();
+        return parent::isDefault() || $this->getRecord()->isDefaultForCurrentUser();
     }
 
     public function getTableViewState(): TableViewState
     {
-        return $this->getTableView()->view_state;
+        return $this->getRecord()->view_state;
     }
 
-    public function getTableView(): SavedTableView
+    public function getRecord(): SavedTableView
     {
-        if ($this->cachedTableView) {
-            return $this->cachedTableView;
+        if ($this->cachedRecord) {
+            return $this->cachedRecord;
         }
 
-        $record = $this->evaluate($this->tableView);
+        $record = $this->evaluate($this->record);
 
         if (! $record) {
             throw new Exception('User table view must have a table view instance set.');
         }
 
-        return $this->cachedTableView = $record;
+        return $this->cachedRecord = $record;
     }
 }
