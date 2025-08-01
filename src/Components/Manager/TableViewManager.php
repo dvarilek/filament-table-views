@@ -24,7 +24,7 @@ class TableViewManager extends ViewComponent
 
     protected MaxWidth|Closure|null $width = MaxWidth::Small;
 
-    protected bool|Closure $shouldPersistActiveTableViewInSession = false;
+    protected bool|Closure $shouldPersistActiveTableViewInSession = true;
 
     public function __construct(string|Closure|null $heading = null)
     {
@@ -72,7 +72,7 @@ class TableViewManager extends ViewComponent
 
     public function persistsActiveTableViewInSession(): bool
     {
-        return $this->evaluate($this->shouldPersistActiveTableViewInSession) ?? config('filament-table-views.table_views.persists_active_table_view_in_session', false);
+        return (bool) $this->evaluate($this->shouldPersistActiveTableViewInSession) ?? config('filament-table-views.table_views.persists_active_table_view_in_session', false);
     }
 
     public function getViewData(): array

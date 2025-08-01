@@ -9,8 +9,9 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Livewire\Component;
+use Filament\Tables\Contracts\HasTable;
 
-class LivewirePropertyFixture extends Component implements HasForms, Tables\Contracts\HasTable
+class LivewirePropertyFixture extends Component implements HasForms, HasTable
 {
     use InteractsWithForms;
     use Tables\Concerns\InteractsWithTable;

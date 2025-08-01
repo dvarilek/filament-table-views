@@ -22,10 +22,10 @@
 >
     <div
         x-cloak
-        x-show="isReorderingActive(@js($groupValue))"
+        x-show="isReorderingGroup(@js($groupValue))"
         class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
         x-text="isLoading ? @js($loadingLabel) : (
-                (isDeferredReorderable && hasPendingReorderedRecords())
+               (@js($isDeferredReorderable) && hasPendingReorderedRecords())
                     ? @js($confirmReorderingLabel)
                     : @js($stopReorderingLabel)
             )"
@@ -36,11 +36,7 @@
 
     <div
         x-cloak
-        @if ($isMultiGroupReorderable)
-            x-show="! isReorderingActive(@js($groupValue))"
-        @else
-            x-show="! isReorderingActive(@js($groupValue)) && ! activeReorderingGroup"
-        @endif
+        x-show="! isReorderingActive()"
     >
         <x-filament::icon
             icon="heroicon-o-arrows-up-down"
@@ -50,7 +46,7 @@
 
     <div
         x-cloak
-        x-show="isReorderingActive(@js($groupValue))"
+        x-show="isReorderingGroup(@js($groupValue))"
     >
         <x-filament::loading-indicator
             :attributes="

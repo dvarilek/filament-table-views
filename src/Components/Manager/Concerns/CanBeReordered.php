@@ -17,9 +17,13 @@ trait CanBeReordered
 
     protected bool|Closure $isDeferredReorderable = true;
 
+    protected string|Closure|null $multiGroupReorderingHeading = null;
+
     protected ?Closure $checkIfGroupIsReorderableUsing = null;
 
     protected ?Closure $checkIfRecordIsReorderableUsing = null;
+
+    protected bool|Closure $isHighlightingReorderedRecords = true;
 
     public function reorderable(bool|Closure $isReorderable = true, bool|Closure $isDeferred = true): static
     {
@@ -40,6 +44,20 @@ trait CanBeReordered
     public function deferredReorderable(bool|Closure $condition = true): static
     {
         $this->isDeferredReorderable = $condition;
+
+        return $this;
+    }
+
+    public function multiGroupReorderingHeading(string|Closure|null $heading): static
+    {
+        $this->multiGroupReorderingHeading = $heading;
+
+        return $this;
+    }
+
+    public function highlightReorderedRecords(bool|Closure $condition = true): static
+    {
+        $this->isHighlightingReorderedRecords = $condition;
 
         return $this;
     }
@@ -71,6 +89,16 @@ trait CanBeReordered
     public function isDeferredReorderable(): bool
     {
         return (bool) $this->evaluate($this->isDeferredReorderable);
+    }
+
+    public function getMultiGroupReorderingHeading(): string
+    {
+        return $this->evaluate($this->multiGroupReorderingHeading) ?? __('filament-table-views::toolbar.actions.manage-table-views.reordering.multi_group_reorder_heading');
+    }
+
+    public function isHighlightingReorderedRecords(): bool
+    {
+        return (bool) $this->evaluate($this->isHighlightingReorderedRecords);
     }
 
     public function isGroupReorderable(TableViewGroupEnum $group): bool

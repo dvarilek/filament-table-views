@@ -74,7 +74,10 @@ trait HasTableViews
     public function getTableViewManager(): TableViewManager
     {
         return TableViewManager::make()
-            ->livewire($this);
+            ->livewire($this)
+            ->reorderable()
+            ->highlightReorderedRecords()
+            ->multiGroupReorderable();
     }
 
     /**

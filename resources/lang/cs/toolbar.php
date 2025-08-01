@@ -86,6 +86,16 @@ return [
 
             ],
 
+            'group_item_badges' => [
+
+                'public' => 'Veřejné',
+
+                'private' => 'Soukromé',
+
+                'default' => 'Výchozí',
+                
+            ],
+
             'reordering' => [
 
                 'confirm_reordering' => 'Uložit pořadí',
@@ -96,6 +106,8 @@ return [
 
                 'reordered_notification_title' => 'Uloženo',
 
+                'multi_group_reorder_heading' => 'Změnit pořadí pohledů',
+
             ],
 
             'empty-state' => [
@@ -103,6 +115,7 @@ return [
                 'search_empty_state' => 'Nenalezeny žádné odpovídající pohledy',
 
                 'no_views_empty_state' => 'Nejsou k dispozici žádné pohledy',
+
             ],
 
         ],

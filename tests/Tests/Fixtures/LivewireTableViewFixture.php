@@ -4,13 +4,14 @@ namespace Dvarilek\FilamentTableViews\Tests\Tests\Fixtures;
 
 use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Concerns\HasTableViews;
+use Dvarilek\FilamentTableViews\Contracts\HasTableViewManager;
 use Dvarilek\FilamentTableViews\Tests\Models\Product;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
-class LivewireTableViewFixture extends ParentLivewireTableViewFixture
+class LivewireTableViewFixture extends ParentLivewireTableViewFixture implements HasTableViewManager
 {
     use HasTableViews;
 

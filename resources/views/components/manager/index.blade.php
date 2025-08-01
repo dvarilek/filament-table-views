@@ -2,6 +2,9 @@
     use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
     use Dvarilek\FilamentTableViews\Contracts\HasTableViewManager;
     use Illuminate\View\ComponentAttributeBag;
+    use Illuminate\Support\Collection;
+    use Filament\Support\Facades\FilamentAsset;
+    use Filament\Support\Facades\FilamentView;
 
     /* @var HasTableViewManager $livewire */
     $livewire = $getLivewire();
@@ -23,6 +26,9 @@
     $isReorderable = $isReorderable();
     $isDeferredReorderable = $isDeferredReorderable();
     $isMultiGroupReorderable = $isMultiGroupReorderable();
+    $multiGroupReorderingHeading = $getMultiGroupReorderingHeading();
+    $isHighlightingReorderedRecords = $isHighlightingReorderedRecords();
+
 
     $isCollapsible = $isCollapsible();
     $defaultCollapsedGroups = array_map(fn (TableViewGroupEnum $group) => $group->value, $getDefaultCollapsedGroups());
@@ -35,185 +41,25 @@
     $tableViews = $livewire->getAllTableViews(shouldGroupByTableViewType: true);
     $filteredTableViews = $livewire->filterTableViewManagerTableViews($tableViews);
 
-    // TODO: Finish this, also consider passing some data through ->viewData and maybe move dropdown into here 
     $hasTableViewsVisible = fn (TableViewGroupEnum $group) => filled($filteredTableViews->get($group->value));
-    $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => $isMultiGroupReorderable || ($hasTableViewsVisible($group) && (! $isFilterable || $filters[$group->value]));
-
+    $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => (!$isFilterable || $filters[$group->value]) && ($isMultiGroupReorderable || $hasTableViewsVisible($group));
 @endphp
 
 <div
     class="flex flex-1 flex-col"
     @if ($isCollapsible || $isReorderable)
-        x-data="{
-            collapsedGroups: new Set(@js($defaultCollapsedGroups)),
-
+        @if (FilamentView::hasSpaMode())
+            {{-- format-ignore-start --}}ax-load="visible || event (ax-modal-opened)"{{-- format-ignore-end --}}
+        @else
+            ax-load
+        @endif
+        ax-load-src="{{ FilamentAsset::getAlpineComponentSrc('table-view-manager', 'dvarilek/filament-table-views') }}"
+        x-data="tableViewManager({
+            defaultCollapsedGroups: @js($defaultCollapsedGroups),
             isDeferredReorderable: @js($isDeferredReorderable),
-
-            pendingReorderedRecords: new Map(),
-
             isMultiGroupReorderable: @js($isMultiGroupReorderable),
-
-            activeReorderingGroup: null,
-
-            isTrackingChanges: true,
-
-            isMultiGroupReorderingActive: false,
-
-            isLoading: false,
-
-            toggleCollapsedGroup(group) {
-                if (this.isGroupCollapsed(group)) {
-                    this.collapsedGroups.delete(group)
-
-                    return
-                }
-
-                this.collapsedGroups.add(group)
-            },
-
-            isGroupCollapsed: function (group) {
-                return this.collapsedGroups.has(group)
-            },
-
-            isReorderingActive(group = null) {
-                if (this.isMultiGroupReorderable) {
-                    return this.isMultiGroupReorderingActive;
-                }
-
-                return this.activeReorderingGroup === group;
-            },
-
-            startReordering(group = null) {
-                if (this.isLoading) {
-                    return
-                }
-
-                if (this.isMultiGroupReorderable) {
-                    this.isMultiGroupReorderingActive = true;
-
-                    return;
-                }
-
-                this.activeReorderingGroup = group;
-            },
-
-            stopReordering(group = null) {
-                if (this.isMultiGroupReorderable) {
-                    this.isMultiGroupReorderingActive = false;
-
-                    return;
-                }
-
-                this.activeReorderingGroup = null;
-            },
-
-            hasPendingReorderedRecords(group = null) {
-                if (group) {
-                    return this.pendingReorderedRecords.has(group)
-                }
-
-                return this.pendingReorderedRecords.size > 0
-            },
-
-            async toggleReordering(group = null) {
-                if (this.isLoading) {
-                    return
-                }
-
-                if (this.isReorderingActive(group)) {
-                    if (this.isDeferredReorderable) {
-                        const pendingReorderedRecords = this.pendingReorderedRecords
-
-                        if (pendingReorderedRecords.size > 0) {
-                            if (this.isMultiGroupReorderable) {
-                                await this.reorderMultipleGroups(pendingReorderedRecords)
-                            } else {
-                                await this.reorderGroup(group, pendingReorderedRecords.get(group))
-                            }
-
-                            this.pendingReorderedRecords.clear()
-                        }
-                    }
-
-                    this.stopReordering(group)
-
-                    return
-                }
-
-                this.startReordering(group)
-            },
-
-
-            async handleGroupReorder(event) {
-                const newOrder = new Set(event.target.sortable.toArray())
-                const group = event.target.dataset.tableViewGroup
-
-                if (this.isDeferredReorderable) {
-                    this.pendingReorderedRecords.set(group, newOrder)
-
-                    return
-                }
-
-                await this.reorderGroup(group, newOrder)
-            },
-
-            async handleMultiGroupReorder(event) {
-                const fromGroup = event.from.dataset.tableViewGroup
-                const fromNewOrder = new Set(event.from.sortable.toArray())
-
-                const toGroup = event.to.dataset.tableViewGroup
-                const toNewOrder = new Set(event.to.sortable.toArray())
-
-                if (this.isDeferredReorderable) {
-                     this.pendingReorderedRecords.set(fromGroup, fromNewOrder)
-
-                     if (fromGroup !== toGroup) {
-                        this.pendingReorderedRecords.set(toGroup, toNewOrder)
-                     }
-
-                     return
-                }
-
-                await this.reorderMultipleGroups(new Map([
-                    [fromGroup, fromNewOrder],
-                    [toGroup, toNewOrder]
-                ]))
-            },
-
-            async reorderGroup(group, order) {
-                if (! order.size) {
-                    return
-                }
-
-                this.isLoading = true
-
-                try {
-                    await $wire.reorderTableViewsInGroup(group, [...order])
-                } finally {
-                    this.isLoading = false
-                }
-            },
-
-            async reorderMultipleGroups(groupOrdersMap) {
-                if (groupOrdersMap.size === 1) {
-                    await this.reorderGroup(...groupOrdersMap.entries().next().value)
-
-                    return
-                }
-
-                this.isLoading = true
-
-                try {
-                    const groupedTableViewOrders = Object.fromEntries(
-                      [...groupOrdersMap.entries()].map(([group, order]) => [group, [...order]])
-                    )
-
-                    await $wire.reorderTableViewsInGroups(groupedTableViewOrders)
-                } finally {
-                    this.isLoading = false
-                }
-            }
-        }"
+            isHighlightingReorderedRecords: @js($isHighlightingReorderedRecords),
+        })"
     @endif
 >
     <div class="flex flex-1 flex-col space-y-4 px-6 pb-6 pt-6">
@@ -330,7 +176,7 @@
                 <h5
                     class="text-sm font-medium uppercase tracking-wide "
                 >
-                    Multi group reordering
+                    {{ $multiGroupReorderingHeading }}
                 </h5>
 
                 <x-filament-table-views::manager.reordering-indicator
@@ -345,6 +191,7 @@
         <div
             class="space-y-6 overflow-y-auto px-6 pb-6"
             style="max-height: 500px"
+            x-ref="referenceAlpine"
         >
             @foreach ($tableViewGroups as $group)
                 @if ($canRenderTableViewGroup($group))
@@ -406,8 +253,11 @@
                             @endif
                             @if ($canReorderGroup)
                                 x-sortable
-                                x-sortable-animation="400s"
                                 data-table-view-group="{{ $groupValue }}"
+                                @if ($isDeferredReorderable)
+                                    {{-- Without alpine rerendering, records that have been indirectly affected during a previous reorder wouldn't be reorderable on subsequent reorder attempts --}}
+                                    x-data="{}"
+                                @endif
                                 @if ($isMultiGroupReorderable)
                                     x-sortable-group="shared"
                                     x-on:end.stop="handleMultiGroupReorder($event)"
@@ -416,7 +266,7 @@
                                 @endif
                             @endif
                         >
-                            @foreach($filteredTableViews->get($group->value, collect()) as $key => $tableView)
+                            @foreach($filteredTableViews->get($groupValue, collect()) as $key => $tableView)
                                 <x-filament-table-views::manager.table-view-group-item
                                     :wire-key="'filament-table-views-manager-' . $groupValue . '-view-' . $key . '-' . $livewireId"
                                     :key="$key"
@@ -425,6 +275,7 @@
                                     :activeTableViewKey="$activeTableViewKey"
                                     :actions="$tableViewActions"
                                     :isReorderable="$canReorderGroup && $isRecordReorderable($tableView->getRecord())"
+                                    :isDeferredReorderable="$isDeferredReorderable"
                                 />
                             @endforeach
                         </div>

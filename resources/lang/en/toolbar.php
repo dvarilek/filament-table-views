@@ -86,6 +86,16 @@ return [
 
             ],
 
+            'group_item_badges' => [
+
+                'public' => 'Public',
+
+                'private' => 'Private',
+
+                'default' => 'Default',
+
+            ],
+
             'reordering' => [
 
                 'confirm_reordering' => 'Save order',
@@ -95,6 +105,8 @@ return [
                 'stop_reordering' => 'Cancel',
 
                 'reordered_notification_title' => 'Saved',
+
+                'multi_group_reorder_heading' => 'Reorder table views',
 
             ],
 
