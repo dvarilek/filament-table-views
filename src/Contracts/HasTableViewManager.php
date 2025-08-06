@@ -14,38 +14,9 @@ use Illuminate\Support\Collection;
 
 interface HasTableViewManager
 {
-    /**
-     * @return array<string, TableView>
-     */
-    public function getTableViews(): array;
-
     public function getTableViewManager(): TableViewManager;
 
     public function isTableViewManagerSearchEmpty(): bool;
-
-    public function manageTableViewsAction(): Action;
-
-    public function createTableViewAction(): Action;
-
-    public function togglePublicTableViewAction(): Action;
-
-    public function toggleFavoriteTableViewAction(): Action;
-
-    public function toggleDefaultTableViewAction(): Action;
-
-    public function editTableViewAction(): Action;
-
-    public function deleteTableViewAction(): Action;
-
-    /**
-     * @return list<Action | ActionGroup>
-     */
-    public function getTableViewManagerUserActions(): array;
-
-    /**
-     * @return list<Action | ActionGroup>
-     */
-    public function getTableViewManagerSystemActions(): array;
 
     public function toggleActiveTableView(string $tableViewKey): void;
 
@@ -56,7 +27,6 @@ interface HasTableViewManager
     public function filterTableViewManagerTableViews(Collection $tableViews): Collection;
 
     /**
-     * @param  TableViewGroupEnum $group
      * @param  list<mixed> $order
      */
     public function reorderTableViewsInGroup(TableViewGroupEnum $group, array $order): void;

@@ -7,6 +7,7 @@ namespace Dvarilek\FilamentTableViews\Components\Actions\Concerns;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Hidden;
@@ -15,6 +16,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Support\Facades\FilamentColor;
+use Illuminate\Support\HtmlString;
 use Spatie\Color\Hex;
 
 /**
@@ -193,14 +195,13 @@ trait HasTableViewFormComponents
                 if (! is_array($color) && preg_match('/^#(?:[a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8})$/i', $color)) {
                     $color = Hex::fromString($color)->toRgb()->__toString();
                 }
-
                 return [
                     $key => '
                         <span class="flex items-center gap-x-4">
                             <span class="rounded-full w-4 h-4" style="background-color: ' . (is_array($color) ? 'rgb(' . $color['600'] . ')' : $color) . '"></span>
                             <span>' . $key . '</span>
                         </span>
-                    ',
+                    '
                 ];
             }));
 
@@ -286,7 +287,7 @@ trait HasTableViewFormComponents
         return $component;
     }
 
-    protected function getExtraFormComponentBefore(string $componentName): null | Field | Component
+    protected function getExtraFormComponentBefore(string $componentName): null|Field|Component
     {
         return $this->extraFormComponents[$componentName] ?? null;
     }

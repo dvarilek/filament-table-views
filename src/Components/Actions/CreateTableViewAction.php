@@ -52,10 +52,10 @@ class CreateTableViewAction extends Action
         $this->action(function (HasTable $livewire): void {
             /* @var ?SavedTableView $record */
             $record = $this->process(static function (CreateTableViewAction $action, HasTable $livewire, array $data): SavedTableView {
-                $tableViewModelType = $action->getModel();
+                $relatedModel = $action->getModel();
 
-                if (! $tableViewModelType) {
-                    throw new Exception('The CreateViewAction must have a table view model type set.');
+                if (! $relatedModel) {
+                    throw new Exception('The CreateViewAction must have a table related model type set.');
                 }
 
                 $user = auth()->user();
@@ -71,7 +71,7 @@ class CreateTableViewAction extends Action
                 /* @var SavedTableView $tableView */
                 $tableView = $user->tableViews()->create([
                     ...$data,
-                    'model_type' => $tableViewModelType,
+                    'model_type' => $relatedModel,
                     'view_state' => TableViewState::fromLivewire($livewire),
                 ]);
 

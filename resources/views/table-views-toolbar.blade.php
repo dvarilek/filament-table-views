@@ -8,22 +8,23 @@
 
 @if (in_array(HasTableViews::class, class_uses_recursive($this)))
     @php
+        $activeTableViewKey = $this->activeTableViewKey;
         $livewireId = $this->getId();
 
         $tableViews = $this->getAllTableViews(shouldGroupByTableViewType: true);
 
         $systemTableViews = $tableViews->get(TableViewGroupEnum::SYSTEM->value, collect());
-        $favoriteUserTableViews = $tableViews->get(TableViewGroupEnum::FAVORITE->value, collect());
-        $publicUserTableViews = $tableViews->get(TableViewGroupEnum::PUBLIC->value, collect());
-        $privateUserTableViews = $tableViews->get(TableViewGroupEnum::PRIVATE->value, collect());
-
         $hasSystemTableViews = filled($systemTableViews);
+
+        $favoriteUserTableViews = $tableViews->get(TableViewGroupEnum::FAVORITE->value, collect());
         $hasFavoriteUserTableViews = filled($favoriteUserTableViews);
 
-        $activeTableViewKey = $this->activeTableViewKey;
-        $activeTableView = $this->getActiveTableView();
-
         $tableViewManager = $this->getTableViewManager();
+        $createAction = $tableViewManager->getCreateAction();
+        $manageAction = $tableViewManager->getManageAction();
+
+        $canRenderCreateAction = $createAction && ! $createAction->isDisabled();
+        $canRenderTableViewManager = $manageAction && ! $manageAction->isDisabled() && ! $tableViewManager->isDisabled();
     @endphp
 
     <div
@@ -33,22 +34,6 @@
             <nav
                 class="fi-table-views-toolbar flex items-center gap-x-2 overflow-x-auto"
             >
-                {{-- Consider if this makes any sense --}}
-                @if ($activeTableView instanceof UserView && ! $activeTableView->isFavorite())
-                    <x-filament-table-views::table-view
-                        :wire:key="'filament-table-views-toolbar-active-view-' . $activeTableViewKey . '-' . $livewireId"
-                        :key="$activeTableViewKey"
-                        :tableView="$activeTableView"
-                        :isActive="true"
-                    />
-
-                    @if ($hasSystemTableViews || $hasFavoriteUserTableViews)
-                        <span
-                            class="h-6 border-e border-gray-300 dark:border-gray-700"
-                        ></span>
-                    @endif
-                @endif
-
                 @foreach ($systemTableViews as $key => $tableView)
                     <x-filament-table-views::table-view
                         :wire:key="'filament-table-views-toolbar-system-view-' . $key . '-' . $livewireId"
@@ -75,19 +60,16 @@
             </nav>
         @endif
 
-        <div class="flex items-center gap-x-4">
-            {{ $this->createTableViewAction }}
+        @if ($canRenderCreateAction || $canRenderTableViewManager)
+            <div class="flex items-center gap-x-4">
+                @if ($canRenderCreateAction)
+                    {{ $createAction }}
+                @endif
 
-            <x-filament::dropdown
-                placement="bottom-start"
-                :width="$tableViewManager->getWidth()"
-            >
-                <x-slot name="trigger">
-                    {{ $this->manageTableViewsAction }}
-                </x-slot>
-
-                {{ $tableViewManager }}
-            </x-filament::dropdown>
-        </div>
+                @if ($canRenderTableViewManager)
+                    {{ $tableViewManager }}
+               @endif
+            </div>
+        @endif
     </div>
 @endif

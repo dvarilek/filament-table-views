@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace Dvarilek\FilamentTableViews\Components\Manager;
 
 use Closure;
+use Dvarilek\FilamentTableViews\Contracts\HasTableViewManager;
 use Filament\Support\Components\ViewComponent;
 use Filament\Support\Enums\MaxWidth;
-use Illuminate\Support\Arr;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
 
 class TableViewManager extends ViewComponent
 {
     use Concerns\BelongsToLivewire;
+    use Concerns\CanBeDisabled;
+    use Concerns\CanBeHidden;
     use Concerns\CanBeReordered;
     use Concerns\CanBeSearchable;
+    use Concerns\CanManageTableViews;
     use Concerns\CanResetFilters;
+    use Concerns\HasActions;
     use Concerns\HasFilters;
     use Concerns\HasGroups;
 
@@ -22,9 +28,9 @@ class TableViewManager extends ViewComponent
 
     protected string|Closure|null $heading = null;
 
-    protected MaxWidth|Closure|null $width = MaxWidth::Small;
+    protected int|string|Closure|null $maxHeight = '500px';
 
-    protected bool|Closure $shouldPersistActiveTableViewInSession = true;
+    protected MaxWidth|Closure|null $width = MaxWidth::Small;
 
     public function __construct(string|Closure|null $heading = null)
     {
@@ -46,16 +52,16 @@ class TableViewManager extends ViewComponent
         return $this;
     }
 
-    public function width(MaxWidth|Closure|null $width): static
+    public function maxHeight(int|string|Closure|null $height): static
     {
-        $this->width = $width;
+        $this->maxHeight = $height;
 
         return $this;
     }
 
-    public function persistActiveTableViewInSession(bool|Closure $condition = true): static
+    public function width(MaxWidth|Closure|null $width): static
     {
-        $this->shouldPersistActiveTableViewInSession = $condition;
+        $this->width = $width;
 
         return $this;
     }
@@ -65,21 +71,44 @@ class TableViewManager extends ViewComponent
         return $this->evaluate($this->heading) ?? __('filament-table-views::toolbar.actions.manage-table-views.label');
     }
 
+    public function getMaxHeight(): string
+    {
+        $maxHeight = (string) $this->evaluate($this->maxHeight);
+
+        return match (true) {
+            ! $maxHeight => '500px',
+            str_ends_with($maxHeight, 'px') => $maxHeight,
+            default => $maxHeight . 'px',
+        };
+    }
+
     public function getWidth(): MaxWidth
     {
         return $this->evaluate($this->width) ?? MaxWidth::Small;
     }
 
-    public function persistsActiveTableViewInSession(): bool
+    /**
+     * @return array<mixed>
+     */
+    protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): array
     {
-        return (bool) $this->evaluate($this->shouldPersistActiveTableViewInSession) ?? config('filament-table-views.table_views.persists_active_table_view_in_session', false);
+        return match ($parameterName) {
+            'livewire' => [$this->getLivewire()],
+            'table' => [$this->getLivewire()->getTable()],
+            'model' => [$this->getRelatedModel()],
+            default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
+        };
     }
 
-    public function getViewData(): array
+    /**
+     * @return array<mixed>
+     */
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): array
     {
-        return Arr::mapWithKeys(
-            $this->viewData,
-            fn (mixed $data): array => $this->evaluate($data) ?? [],
-        );
+        return match ($parameterType) {
+            HasTable::class, HasTableViewManager::class => [$this->getLivewire()],
+            Table::class => [$this->getLivewire()->getTable()],
+            default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
+        };
     }
 }

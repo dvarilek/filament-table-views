@@ -2,7 +2,6 @@
     use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
     use Dvarilek\FilamentTableViews\Contracts\HasTableViewManager;
     use Illuminate\View\ComponentAttributeBag;
-    use Illuminate\Support\Collection;
     use Filament\Support\Facades\FilamentAsset;
     use Filament\Support\Facades\FilamentView;
 
@@ -11,6 +10,8 @@
     $livewireId = $livewire->getId();
 
     $heading = $getHeading();
+    $maxHeight = $getMaxHeight();
+    $width = $getWidth();
 
     $isSearchable = $isSearchable();
     $searchDebounce = $getSearchDebounce();
@@ -29,15 +30,14 @@
     $multiGroupReorderingHeading = $getMultiGroupReorderingHeading();
     $isHighlightingReorderedRecords = $isHighlightingReorderedRecords();
 
-
     $isCollapsible = $isCollapsible();
     $defaultCollapsedGroups = array_map(fn (TableViewGroupEnum $group) => $group->value, $getDefaultCollapsedGroups());
     $tableViewGroups = $getTableViewGroups();
 
     $activeTableViewKey = $livewire->activeTableViewKey;
-    $systemTableViewActions = $livewire->getTableViewManagerSystemActions();
-    $userTableViewActions = $livewire->getTableViewManagerUserActions();
 
+    $actions = $getActions();
+    $manageAction = $getManageAction();
     $tableViews = $livewire->getAllTableViews(shouldGroupByTableViewType: true);
     $filteredTableViews = $livewire->filterTableViewManagerTableViews($tableViews);
 
@@ -45,35 +45,43 @@
     $canRenderTableViewGroup = fn (TableViewGroupEnum $group) => (!$isFilterable || $filters[$group->value]) && ($isMultiGroupReorderable || $hasTableViewsVisible($group));
 @endphp
 
-<div
-    class="flex flex-1 flex-col"
-    @if ($isCollapsible || $isReorderable)
-        @if (FilamentView::hasSpaMode())
-            {{-- format-ignore-start --}}ax-load="visible || event (ax-modal-opened)"{{-- format-ignore-end --}}
+<x-filament::dropdown
+    placement="bottom-start"
+    :width="$width"
+>
+    <x-slot name="trigger">
+        {{ $manageAction }}
+    </x-slot>
+
+    <div
+        class="flex flex-1 flex-col"
+        @if ($isCollapsible || $isReorderable)
+            @if (FilamentView::hasSpaMode())
+                {{-- format-ignore-start --}}ax-load="visible || event (ax-modal-opened)"{{-- format-ignore-end --}}
         @else
             ax-load
         @endif
         ax-load-src="{{ FilamentAsset::getAlpineComponentSrc('table-view-manager', 'dvarilek/filament-table-views') }}"
         x-data="tableViewManager({
-            defaultCollapsedGroups: @js($defaultCollapsedGroups),
-            isDeferredReorderable: @js($isDeferredReorderable),
-            isMultiGroupReorderable: @js($isMultiGroupReorderable),
-            isHighlightingReorderedRecords: @js($isHighlightingReorderedRecords),
-        })"
-    @endif
->
-    <div class="flex flex-1 flex-col space-y-4 px-6 pb-6 pt-6">
-        <div class="flex justify-between">
-            <h4
-                class="text-base font-semibold leading-6 text-gray-950 dark:text-white"
-            >
-                {{ $heading }}
-            </h4>
+                defaultCollapsedGroups: @js($defaultCollapsedGroups),
+                isDeferredReorderable: @js($isDeferredReorderable),
+                isMultiGroupReorderable: @js($isMultiGroupReorderable),
+                isHighlightingReorderedRecords: @js($isHighlightingReorderedRecords),
+            })"
+        @endif
+    >
+        <div class="flex flex-1 flex-col space-y-4 px-6 pb-6 pt-6">
+            <div class="flex justify-between">
+                <h4
+                    class="text-base font-semibold leading-6 text-gray-950 dark:text-white"
+                >
+                    {{ $heading }}
+                </h4>
 
-            @if ($isSearchable || $isFilterable)
-                <div>
-                    <x-filament::link
-                        :attributes="
+                @if ($isSearchable || $isFilterable)
+                    <div>
+                        <x-filament::link
+                            :attributes="
                             \Filament\Support\prepare_inherited_attributes(
                                 new Illuminate\View\ComponentAttributeBag([
                                     'color' => 'danger',
@@ -84,12 +92,12 @@
                                 ])
                             )
                         "
-                    >
-                        {{ $getResetLabel() }}
-                    </x-filament::link>
+                        >
+                            {{ $getResetLabel() }}
+                        </x-filament::link>
 
-                    <x-filament::loading-indicator
-                        :attributes="
+                        <x-filament::loading-indicator
+                            :attributes="
                             \Filament\Support\prepare_inherited_attributes(
                                 new Illuminate\View\ComponentAttributeBag([
                                     'wire:loading.delay.' . config('filament.livewire_loading_delay', 'default') => '',
@@ -98,29 +106,29 @@
                             )
                                 ->class(['h-5 w-5 text-gray-400 dark:text-gray-500'])
                         "
-                    />
-                </div>
-            @endif
-        </div>
+                        />
+                    </div>
+                @endif
+            </div>
 
-        @if ($isSearchable)
-            @php
-                $searchWireModelAttribute = $isSearchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$searchDebounce}";
-            @endphp
+            @if ($isSearchable)
+                @php
+                    $searchWireModelAttribute = $isSearchOnBlur ? 'wire:model.blur' : "wire:model.live.debounce.{$searchDebounce}";
+                @endphp
 
-            <div x-id="['input']" class="pt-1">
-                <label x-bind:for="$id('input')" class="sr-only">
-                    {{ $searchLabel }}
-                </label>
+                <div x-id="['input']" class="pt-1">
+                    <label x-bind:for="$id('input')" class="sr-only">
+                        {{ $searchLabel }}
+                    </label>
 
-                <x-filament::input.wrapper
-                    inline-prefix
-                    prefix-icon="heroicon-m-magnifying-glass"
-                    prefix-icon-alias="filament-table-views::manager-search-field"
-                    wire:target="tableViewManagerSearch"
-                >
-                    <x-filament::input
-                        :attributes="
+                    <x-filament::input.wrapper
+                        inline-prefix
+                        prefix-icon="heroicon-m-magnifying-glass"
+                        prefix-icon-alias="filament-table-views::manager-search-field"
+                        wire:target="tableViewManagerSearch"
+                    >
+                        <x-filament::input
+                            :attributes="
                             (new ComponentAttributeBag)->merge([
                                 'autocomplete' => 'off',
                                 'inlinePrefix' => true,
@@ -132,16 +140,16 @@
                                 'x-on:keyup' => 'if ($event.key === \'Enter\') { $wire.$refresh() }',
                             ])
                         "
-                    />
-                </x-filament::input.wrapper>
-            </div>
-        @endif
+                        />
+                    </x-filament::input.wrapper>
+                </div>
+            @endif
 
-        @if ($isFilterable)
-            <div class="flex flex-wrap gap-x-4 gap-y-2">
-                @foreach($tableViewGroups as $group)
-                    <x-filament::badge
-                        :attributes="
+            @if ($isFilterable)
+                <div class="flex flex-wrap gap-x-4 gap-y-2">
+                    @foreach($tableViewGroups as $group)
+                        <x-filament::badge
+                            :attributes="
                             \Filament\Support\prepare_inherited_attributes(
                                 new Illuminate\View\ComponentAttributeBag([
                                     'size' => 'sm',
@@ -156,107 +164,105 @@
                                 'relative cursor-pointer select-none',
                             ])
                         "
-                    >
-                        {{ $getFilterLabel($group) }}
+                        >
+                            {{ $getFilterLabel($group) }}
 
-                        @if ($tableViewCount = ($tableViews->get($group->value)?->count()))
-                            <span
-                                class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
-                            >
+                            @if ($tableViewCount = ($tableViews->get($group->value)?->count()))
+                                <span
+                                    class="pointer-events-none absolute -left-2 -top-1 h-4 w-4 select-none text-center"
+                                >
                                 {{ $tableViewCount > 99 ? '99+' : $tableViewCount }}
                             </span>
-                        @endif
-                    </x-filament::badge>
-                @endforeach
-            </div>
-        @endif
+                            @endif
+                        </x-filament::badge>
+                    @endforeach
+                </div>
+            @endif
 
-        @if ($isReorderable && $isMultiGroupReorderable)
-            <div class="flex flex-1 justify-between">
-                <h5
-                    class="text-sm font-medium uppercase tracking-wide "
-                >
-                    {{ $multiGroupReorderingHeading }}
-                </h5>
+            @if ($isReorderable && $isMultiGroupReorderable)
+                <div class="flex flex-1 justify-between">
+                    <h5
+                        class="text-sm font-medium uppercase tracking-wide "
+                    >
+                        {{ $multiGroupReorderingHeading }}
+                    </h5>
 
-                <x-filament-table-views::manager.reordering-indicator
-                    :isDeferredReorderable="$isDeferredReorderable"
-                    :isMultiGroupReorderable="$isMultiGroupReorderable"
-                />
-            </div>
-        @endif
-    </div>
+                    <x-filament-table-views::manager.reordering-indicator
+                        :isDeferredReorderable="$isDeferredReorderable"
+                        :isMultiGroupReorderable="$isMultiGroupReorderable"
+                    />
+                </div>
+            @endif
+        </div>
 
-    @if ($canRenderTableViewGroup(TableViewGroupEnum::FAVORITE) || $canRenderTableViewGroup(TableViewGroupEnum::PRIVATE) || $canRenderTableViewGroup(TableViewGroupEnum::PUBLIC) || $canRenderTableViewGroup(TableViewGroupEnum::SYSTEM))
-        <div
-            class="space-y-6 overflow-y-auto px-6 pb-6"
-            style="max-height: 500px"
-            x-ref="referenceAlpine"
-        >
-            @foreach ($tableViewGroups as $group)
-                @if ($canRenderTableViewGroup($group))
-                    @php
-                        $groupValue = $group->value;
+        @if ($canRenderTableViewGroup(TableViewGroupEnum::FAVORITE) || $canRenderTableViewGroup(TableViewGroupEnum::PRIVATE) || $canRenderTableViewGroup(TableViewGroupEnum::PUBLIC) || $canRenderTableViewGroup(TableViewGroupEnum::SYSTEM))
+            <div
+                class="space-y-6 overflow-y-auto px-6 pb-6"
+                style="max-height: {{ $maxHeight }}"
+            >
+                @foreach ($tableViewGroups as $group)
+                    @if ($canRenderTableViewGroup($group))
+                        @php
+                            $groupValue = $group->value;
 
-                        $canCollapseGroup = $isCollapsible && $isGroupCollapsible($group);
-                        $canReorderGroup = $isReorderable && $isGroupReorderable($group) && $group !== TableViewGroupEnum::SYSTEM; // temp
-                        $tableViewActions = $group !== TableViewGroupEnum::SYSTEM ? $userTableViewActions : $systemTableViewActions
-                    @endphp
+                            $canCollapseGroup = $isCollapsible && $isGroupCollapsible($group);
+                            $canReorderGroup = $isReorderable && $isGroupReorderable($group) && $group !== TableViewGroupEnum::SYSTEM; // temp
+                        @endphp
 
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <div
-                                @class([
-                                    'cursor-pointer' => $canCollapseGroup,
-                                    'flex items-center gap-x-2',
-                                ])
-                                @if ($canCollapseGroup)
-                                    x-on:click="toggleCollapsedGroup(@js($groupValue))"
-                                @endif
-                            >
-                                @if ($groupHeading = $getGroupHeading($group))
-                                    <h5
-                                        class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                                    >
-                                        {{ $groupHeading }}
-                                    </h5>
-                                @endif
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div
+                                    @class([
+                                        'cursor-pointer' => $canCollapseGroup,
+                                        'flex items-center gap-x-2',
+                                    ])
+                                    @if ($canCollapseGroup)
+                                        x-on:click="toggleCollapsedGroup(@js($groupValue))"
+                                    @endif
+                                >
+                                    @if ($groupHeading = $getGroupHeading($group))
+                                        <h5
+                                            class="text-sm font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                                        >
+                                            {{ $groupHeading }}
+                                        </h5>
+                                    @endif
 
-                                @if ($canCollapseGroup)
-                                    <x-filament::icon
-                                        icon="heroicon-o-chevron-up"
-                                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                                        x-bind:class="isGroupCollapsed('{{ $groupValue }}') && '-rotate-180'"
-                                    />
+                                    @if ($canCollapseGroup)
+                                        <x-filament::icon
+                                            icon="heroicon-o-chevron-up"
+                                            class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                                            x-bind:class="isGroupCollapsed('{{ $groupValue }}') && '-rotate-180'"
+                                        />
+                                    @endif
+                                </div>
+
+                                @if ($canReorderGroup && ! $isMultiGroupReorderable)
+                                    <div class="px-2">
+                                        <x-filament-table-views::manager.reordering-indicator
+                                            :groupValue="$groupValue"
+                                            :isCollapsible="$canCollapseGroup"
+                                            :isDeferredReorderable="$isDeferredReorderable"
+                                            :isMultiGroupReorderable="$isMultiGroupReorderable"
+                                        />
+                                    </div>
                                 @endif
                             </div>
 
-
-                            @if ($canReorderGroup && ! $isMultiGroupReorderable)
-                                <div class="px-2">
-                                    <x-filament-table-views::manager.reordering-indicator
-                                        :groupValue="$groupValue"
-                                        :isCollapsible="$canCollapseGroup"
-                                        :isDeferredReorderable="$isDeferredReorderable"
-                                        :isMultiGroupReorderable="$isMultiGroupReorderable"
-                                    />
-                                </div>
-                            @endif
-                        </div>
-
-                        <div
-                            class="space-y-1"
-                            @if ($isGroupCollapsible($group))
+                            <div
+                                class="space-y-1"
+                                @if ($canCollapseGroup)
+                                    x-cloak
                                 x-show="! isGroupCollapsed(@js($groupValue))"
                                 x-bind:aria-expanded="! isGroupCollapsed(@js($groupValue))"
                                 aria-expanded="true"
-                            @endif
-                            @if ($canReorderGroup)
-                                x-sortable
+                                @endif
+                                @if ($canReorderGroup)
+                                    x-sortable
                                 data-table-view-group="{{ $groupValue }}"
                                 @if ($isDeferredReorderable)
                                     {{-- Without alpine rerendering, records that have been indirectly affected during a previous reorder wouldn't be reorderable on subsequent reorder attempts --}}
-                                    x-data="{}"
+                                    x-data
                                 @endif
                                 @if ($isMultiGroupReorderable)
                                     x-sortable-group="shared"
@@ -264,39 +270,42 @@
                                 @else
                                     x-on:end.stop="handleGroupReorder($event)"
                                 @endif
-                            @endif
-                        >
-                            @foreach($filteredTableViews->get($groupValue, collect()) as $key => $tableView)
-                                <x-filament-table-views::manager.table-view-group-item
-                                    :wire-key="'filament-table-views-manager-' . $groupValue . '-view-' . $key . '-' . $livewireId"
-                                    :key="$key"
-                                    :group="$group"
-                                    :tableView="$tableView"
-                                    :activeTableViewKey="$activeTableViewKey"
-                                    :actions="$tableViewActions"
-                                    :isReorderable="$canReorderGroup && $isRecordReorderable($tableView->getRecord())"
-                                    :isDeferredReorderable="$isDeferredReorderable"
-                                />
-                            @endforeach
+                                @endif
+                            >
+                                @foreach($filteredTableViews->get($groupValue, collect()) as $key => $tableView)
+                                    <x-filament-table-views::manager.table-view-group-item
+                                        :wire-key="'filament-table-views-manager-' . $groupValue . '-view-' . $key . '-' . $livewireId"
+                                        :key="$key"
+                                        :group="$group"
+                                        :tableView="$tableView"
+                                        :isActive="$activeTableViewKey === (string) $key"
+                                        :actions="$group !== TableViewGroupEnum::SYSTEM ? $actions : []"
+                                        :cacheRecordToAction="$cacheRecordToAction"
+                                        :isReorderable="$canReorderGroup && $isRecordReorderable($tableView->getRecord())"
+                                        :isDeferredReorderable="$isDeferredReorderable"
+                                        :isHighlightingReorderedRecords="$isHighlightingReorderedRecords"
+                                    />
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
-                @endif
-            @endforeach
-        </div>
-    @else
-        <div class="mx-auto grid max-w-lg justify-items-center text-center">
-            <div class="my-4 rounded-full bg-gray-100 p-3 dark:bg-gray-500/20">
-                <x-filament::icon
-                    icon="heroicon-m-x-mark"
-                    class="h-6 w-6 text-gray-500 dark:text-gray-400"
-                />
+                    @endif
+                @endforeach
             </div>
+        @else
+            <div class="mx-auto grid max-w-lg justify-items-center text-center">
+                <div class="my-4 rounded-full bg-gray-100 p-3 dark:bg-gray-500/20">
+                    <x-filament::icon
+                        icon="heroicon-m-x-mark"
+                        class="h-6 w-6 text-gray-500 dark:text-gray-400"
+                    />
+                </div>
 
-            @if ($emptyStatePlaceholder)
-                <h4 class="text-md pb-6 font-normal leading-6">
-                    {{ $emptyStatePlaceholder }}
-                </h4>
-            @endif
-        </div>
-    @endif
-</div>
+                @if ($emptyStatePlaceholder)
+                    <h4 class="text-md pb-6 font-normal leading-6">
+                        {{ $emptyStatePlaceholder }}
+                    </h4>
+                @endif
+            </div>
+        @endif
+    </div>
+</x-filament::dropdown>

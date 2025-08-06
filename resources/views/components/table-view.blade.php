@@ -30,18 +30,19 @@
             ], false)
             ->class([
                 // rounded corners on the bottom would be nice
-                'p-2',
+                "p-2 fi-color-$color",
                 'rounded-t-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 relative' => $isActive,
                 'disabled:opacity-70' => $isDisabled,
             ])
             ->style([
-                \Filament\Support\get_color_css_variables(
-                    $color,
-                    shades: [600],
-                    alias: 'tableView',
-                ),
+               \Filament\Support\get_color_css_variables(
+                   $color,
+                   shades: [600],
+               ),
             ])
     }}
+
+
 >
     <div
         tabindex="0"

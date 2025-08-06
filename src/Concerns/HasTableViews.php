@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Dvarilek\FilamentTableViews\Concerns;
 
-use Closure;
-use Dvarilek\FilamentTableViews\Components\Actions\CreateTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\DeleteTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\EditTableViewAction;
 use Dvarilek\FilamentTableViews\Components\Actions\ToggleDefaultTableViewAction;
@@ -17,13 +15,9 @@ use Dvarilek\FilamentTableViews\Components\TableView\TableView;
 use Dvarilek\FilamentTableViews\Components\TableView\UserView;
 use Dvarilek\FilamentTableViews\Enums\TableViewGroupEnum;
 use Dvarilek\FilamentTableViews\Models\SavedTableView;
-use Exception;
-use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Notifications\Notification;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Contracts\HasTable;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -54,38 +48,107 @@ trait HasTableViews
     #[Url(as: 'tableView')]
     public ?string $activeTableViewKey = null;
 
+    public bool $defaultViewWasApplied = false;
+
     /**
      * @var array<string, mixed>
      */
     public array $originalToggledTableColumns = [];
 
+    protected ?TableViewManager $cachedTableViewManager = null;
+
     protected ?BaseTableView $cachedActiveTableView = null;
 
     /**
-     * @return array<string, TableView>
+     * @return list<TableView>
      */
-    public function getTableViews(): array
+    protected function getTableViews(): array
     {
         return [
-
+            // ...
         ];
     }
 
-    public function getTableViewManager(): TableViewManager
+    protected function configureTableViewManager(TableViewManager $tableViewManager): TableViewManager
     {
-        return TableViewManager::make()
-            ->livewire($this)
-            ->reorderable()
-            ->highlightReorderedRecords()
-            ->multiGroupReorderable();
+        return $tableViewManager;
     }
 
     /**
-     * @return class-string<Model>
+     * @return class-string<Model>|null
      */
-    protected static function getTableViewModelType(): string
+    protected function getTableViewManagerRelatedModel(): ?string
     {
-        return static::getResource()::getModel();
+        return static::getModel();
+    }
+
+    public function bootedHasTableViews(): void
+    {
+        $tableViewManager = $this->getTableViewManager();
+        $shouldPersistActiveTableViewInSession = $tableViewManager->persistsActiveTableViewInSession();
+        $activeTableViewSessionKey = $tableViewManager->getActiveTableViewSessionKey();
+
+        if ($this->activeTableViewKey === null) {
+            if (
+                $shouldPersistActiveTableViewInSession &&
+                session()->has($activeTableViewSessionKey)
+            ) {
+                $this->activeTableViewKey = session()->get($activeTableViewSessionKey) ?? null;
+            } elseif (! $this->defaultViewWasApplied) {
+                $identifier = $this->getDefaultActiveTableView()?->getIdentifier();
+
+                if ($identifier) {
+                    $this->activeTableViewKey = $identifier;
+
+                    $this->defaultViewWasApplied = true;
+                }
+            }
+        }
+    }
+
+    // TODO:
+    //       Finally integrate colors somehow - top and in manager
+    //       Think of a better 'reordered' indicator
+    //       Make system table views have user preferences
+    //       Move more stuff into manager
+    //       Maybe make icon picker
+    //       Add table view overview to edit form
+    //       Add 'table view' indicator to table
+    //       Add marker classes everywhere
+
+    public function getTableViewManager(): TableViewManager
+    {
+        if ($this->cachedTableViewManager) {
+            return $this->cachedTableViewManager;
+        }
+
+        $tableViewManager = TableViewManager::make()
+            ->livewire($this)
+            ->tableViews($this->getTableViews())
+            ->relatedModel($this->getTableViewManagerRelatedModel())
+            ->actions(
+                ActionGroup::make([
+                    TogglePublicTableViewAction::make(),
+                    ToggleFavoriteTableViewAction::make(),
+                    ToggleDefaultTableViewAction::make(),
+                    EditTableViewAction::make(),
+                    DeleteTableViewAction::make(),
+                ])
+            );
+
+        if (method_exists($this, 'getResource')) {
+            $resource = static::getResource();
+
+            if (method_exists($resource, 'tableViewManager')) {
+                $tableViewManager = $resource::tableViewManager($tableViewManager);
+            }
+        }
+
+        $tableViewManager = $this->configureTableViewManager($tableViewManager);
+
+        $tableViewManager->setupActions();
+
+        return $this->cachedTableViewManager = $tableViewManager;
     }
 
     public function toggleViewManagerFilterButton(TableViewGroupEnum $group): void
@@ -114,6 +177,10 @@ trait HasTableViews
     {
         $tableViewManager = $this->getTableViewManager();
 
+        if ($tableViewManager->isDisabled()) {
+            return;
+        }
+
         if (! $tableViewManager->isReorderable()) {
             return;
         }
@@ -141,7 +208,7 @@ trait HasTableViews
 
             $savedTableViewForeignKeyName = $configModel->tableView()->getForeignKeyName();
 
-            $groupTableViewKeys = $this->groupTableViewsByType(collect($this->userTableViews))
+            $groupTableViewKeys = $this->groupTableViewManagerTableViewsByType(collect($this->userTableViews))
                 ->get($group->value, collect())
                 ->reduce(function (array $carry, UserView $userView) use ($order, $tableViewManager) {
                     $record = $userView->getRecord();
@@ -178,16 +245,16 @@ trait HasTableViews
         $this->getTableViewsInGroupReorderedSuccessNotification()?->send();
     }
 
-    // TODO:
-    //      Make other groups visible even if they are empty
-    //      Add tracking for updated table views
-
     /**
      * @param  array<value-of<TableViewGroupEnum>, list<mixed>> $groupedReorderedRecordKeys
      */
     public function reorderTableViewsInGroups(array $groupedReorderedRecordKeys): void
     {
         $tableViewManager = $this->getTableViewManager();
+
+        if ($tableViewManager->isDisabled()) {
+            return;
+        }
 
         if (! $tableViewManager->isReorderable()) {
             return;
@@ -215,7 +282,7 @@ trait HasTableViews
             $savedTableViewModelKeyName = $savedTableViewModel->getKeyName();
 
             $userTableViews = collect($this->userTableViews);
-            $groupedUserTableViews = $this->groupTableViewsByType($userTableViews);
+            $groupedUserTableViews = $this->groupTableViewManagerTableViewsByType($userTableViews);
 
             foreach ($groupedReorderedRecordKeys as $group => $order) {
                 $group = TableViewGroupEnum::tryFrom($group);
@@ -314,110 +381,6 @@ trait HasTableViews
             ->title(__('filament-table-views::toolbar.actions.manage-table-views.reordering.reordered_notification_title'));
     }
 
-    public function manageTableViewsAction(): Action
-    {
-        return Action::make('manageTableViews')
-            ->label(__('filament-table-views::toolbar.actions.manage-table-views.label'))
-            ->iconButton()
-            ->icon('heroicon-m-square-3-stack-3d')
-            ->color('gray')
-            ->livewireClickHandlerEnabled(false);
-    }
-
-    public function createTableViewAction(): Action
-    {
-        return CreateTableViewAction::make()
-            ->model($this->getTableViewModelType());
-    }
-
-    public function togglePublicTableViewAction(): Action
-    {
-        return TogglePublicTableViewAction::make();
-    }
-
-    public function toggleFavoriteTableViewAction(): Action
-    {
-        return ToggleFavoriteTableViewAction::make();
-    }
-
-    public function toggleDefaultTableViewAction(): Action
-    {
-        return ToggleDefaultTableViewAction::make();
-    }
-
-    public function editTableViewAction(): Action
-    {
-        return EditTableViewAction::make();
-    }
-
-    public function deleteTableViewAction(): Action
-    {
-        return DeleteTableViewAction::make();
-    }
-
-    /**
-     * @return array<Action | ActionGroup>
-     */
-    public function getTableViewManagerUserActions(): array
-    {
-        return [
-            ActionGroup::make([
-                $this->togglePublicTableViewAction(),
-                $this->toggleFavoriteTableViewAction(),
-                $this->toggleDefaultTableViewAction(),
-                $this->editTableViewAction(),
-                $this->deleteTableViewAction(),
-            ]),
-        ];
-    }
-
-    /**
-     * @return array<Action | ActionGroup>
-     */
-    public function getTableViewManagerSystemActions(): array
-    {
-        return [
-
-        ];
-    }
-
-    public function configureAction(Action $action): void
-    {
-        $recordKey = array_column($this->mountedActionsArguments, 'filamentTableViewsRecordKey')[0] ?? null;
-
-        if (! $recordKey) {
-            return;
-        }
-
-        $record = SavedTableView::query()->find($recordKey);
-
-        if ($record->model_type !== static::getTableViewModelType()) {
-            return;
-        }
-
-        $action->record($record);
-    }
-
-    /**
-     * @return array<string, TableView>
-     */
-    protected function getSystemTableViews(): array
-    {
-        return collect($this->getTableViews())
-            ->mapWithKeys(static function (TableView $tableView) {
-                $key = $tableView->getLabel();
-
-                if ($key === null) {
-                    throw new Exception('Table view must have a label set.');
-                }
-
-                return [
-                    $key => $tableView->identifier($key),
-                ];
-            })
-            ->toArray();
-    }
-
     /**
      * @return array<string, UserView>
      */
@@ -430,10 +393,12 @@ trait HasTableViews
             return [];
         }
 
+        $tableViewManager = $this->getTableViewManager();
+
         /* @var array<string, UserView> */
         return SavedTableView::query()
             ->whereMorphedTo('owner', $user)
-            ->where('model_type', static::getTableViewModelType())
+            ->where('model_type', $tableViewManager->getRelatedModel())
             ->get()
             ->sortBy(function (SavedTableView $tableView) {
                 $config = $tableView->getCurrentAuthenticatedUserTableViewConfig();
@@ -447,7 +412,7 @@ trait HasTableViews
                 return PHP_INT_MAX - $tableView->{$tableView->getCreatedAtColumn()}->timestamp;
             })
             ->mapWithKeys(static fn (SavedTableView $tableView): array => [
-                (string) $tableView->getKey() => UserView::make($tableView),
+                (string) $tableView->getKey() => $tableViewManager->modifyTableView(UserView::make($tableView)),
             ])
             ->toArray();
     }
@@ -457,17 +422,17 @@ trait HasTableViews
      */
     public function getAllTableViews(bool $shouldGroupByTableViewType = false): Collection
     {
-        $tableViews = collect($this->getSystemTableViews() + $this->userTableViews)
+        $tableViews = collect($this->getTableViewManager()->getTableViews() + $this->userTableViews)
             ->filter(static fn (BaseTableView $tableView) => $tableView->isVisible());
 
-        return $shouldGroupByTableViewType ? $this->groupTableViewsByType($tableViews) : $tableViews;
+        return $shouldGroupByTableViewType ? $this->groupTableViewManagerTableViewsByType($tableViews) : $tableViews;
     }
 
     /**
      * @param  Collection<string, BaseTableView>  $tableViews
      * @return Collection<value-of<TableViewGroupEnum>, Collection<string, BaseTableView>>
      */
-    protected function groupTableViewsByType(Collection $tableViews): Collection
+    protected function groupTableViewManagerTableViewsByType(Collection $tableViews): Collection
     {
         return $tableViews
             ->groupBy(fn (TableView|UserView $tableView): string => match (true) {
@@ -517,35 +482,24 @@ trait HasTableViews
         return $this->cachedActiveTableView = $activeTableView;
     }
 
-    public function bootedHasTableViews(): void
+    protected function getDefaultActiveTableView(): ?BaseTableView
     {
-        $shouldPersistActiveTableViewInSession = $this->getTableViewManager()->persistsActiveTableViewInSession();
-        $activeTableViewSessionKey = $this->getActiveTableViewSessionKey();
+        return $this->getAllTableViews()
+            ->reduce(function ($carry, BaseTableView $tableView) {
+                if ($carry instanceof UserView && $carry->isDefault()) {
+                    return $carry;
+                }
 
-        if ($this->activeTableViewKey === null) {
-            if ($shouldPersistActiveTableViewInSession && session()->has($activeTableViewSessionKey)) {
-                $this->activeTableViewKey = session()->get($activeTableViewSessionKey) ?? null;
-            } else {
-                $defaultTableView = $this->getAllTableViews()
-                    ->reduce(function ($carry, BaseTableView $tableView) {
-                        if ($carry instanceof UserView && $carry->isDefault()) {
-                            return $carry;
-                        }
+                if ($tableView instanceof UserView && $tableView->isDefault()) {
+                    return $tableView;
+                }
 
-                        if ($tableView instanceof UserView && $tableView->isDefault()) {
-                            return $tableView;
-                        }
+                if ($carry === null && $tableView->isDefault()) {
+                    return $tableView;
+                }
 
-                        if ($carry === null && $tableView->isDefault()) {
-                            return $tableView;
-                        }
-
-                        return $carry;
-                    });
-
-                $this->activeTableViewKey = $defaultTableView?->getIdentifier();
-            }
-        }
+                return $carry;
+            });
     }
 
     public function toggleActiveTableView(string $tableViewKey): void
@@ -565,6 +519,20 @@ trait HasTableViews
         }
 
         $this->updatedActiveTableView();
+    }
+
+    public function updatedActiveTableView(): void
+    {
+        $tableViewManager = $this->getTableViewManager();
+
+        if ($tableViewManager->persistsActiveTableViewInSession()) {
+            session()->put(
+                $tableViewManager->getActiveTableViewSessionKey(),
+                $this->activeTableViewKey,
+            );
+        }
+
+        $this->resetPage();
     }
 
     protected function loadStateFromTableView(BaseTableView $tableView): void
@@ -672,18 +640,6 @@ trait HasTableViews
         }
 
         $this->cachedActiveTableView = null;
-    }
-
-    public function updatedActiveTableView(): void
-    {
-        if ($this->getTableViewManager()->persistsActiveTableViewInSession()) {
-            session()->put(
-                $this->getActiveTableViewSessionKey(),
-                $this->activeTableViewKey,
-            );
-        }
-
-        $this->resetPage();
     }
 
     protected function applyActiveTableViewToTableQuery(Builder $query): void
@@ -804,12 +760,5 @@ trait HasTableViews
         $this->applyActiveTableViewToTableQuery($query);
 
         return parent::filterTableQuery($query);
-    }
-
-    public function getActiveTableViewSessionKey(): string
-    {
-        $table = md5($this::class);
-
-        return "filament-table-views::active-table-view.{$table}";
     }
 }

@@ -47,7 +47,18 @@ class EditTableViewAction extends EditAction
 
         $this->modalWidth(MaxWidth::Medium);
 
+
         $this->form(static fn (EditTableViewAction $action) => $action->getFormComponents());
+
+        $this->mutateRecordDataUsing(function ($record, $data) {
+            $config = $record->getCurrentAuthenticatedUserTableViewConfig();
+
+            return [
+                ...$data,
+                'is_favorite' => $config->is_favorite,
+                'is_default' => $config->is_default,
+            ];
+        });
 
         $this->action(function (): void {
             $this->process(static function (EditTableViewAction $action, HasTable $livewire, SavedTableView $record, array $data): void {
