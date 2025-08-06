@@ -6,13 +6,16 @@ namespace Dvarilek\FilamentTableViews\Components\Actions\Concerns;
 
 use Closure;
 use Filament\Actions\Action;
-use Filament\Forms\Components\ColorPicker;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Support\Facades\FilamentColor;
+use Spatie\Color\Hex;
 
 /**
  * @mixin Action
@@ -178,15 +181,35 @@ trait HasTableViewFormComponents
 
     public function getColorFormComponent(): ?Field
     {
-        $component = ColorPicker::make('color')
-            ->label(__('filament-table-views::toolbar.actions.table-view-action.form.color'));
+        $component = Select::make('color')
+            ->label(__('filament-table-views::toolbar.actions.table-view-action.form.color'))
+            ->allowHtml()
+            ->native(false)
+            ->selectablePlaceholder()
+            ->options(collect([
+                ...FilamentColor::getColors(),
+                ...Filament::getCurrentPanel()->getColors(),
+            ])->mapWithKeys(static function ($color, $key) {
+                if (! is_array($color) && preg_match('/^#(?:[a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8})$/i', $color)) {
+                    $color = Hex::fromString($color)->toRgb()->__toString();
+                }
+
+                return [
+                    $key => '
+                        <span class="flex items-center gap-x-4">
+                            <span class="rounded-full w-4 h-4" style="background-color: ' . (is_array($color) ? 'rgb(' . $color['600'] . ')' : $color) . '"></span>
+                            <span>' . $key . '</span>
+                        </span>
+                    ',
+                ];
+            }));
 
         if ($this->modifyColorFormComponentUsing) {
             $component = $this->evaluate($this->modifyColorFormComponentUsing, [
                 'field' => $component,
                 'component' => $component,
             ], [
-                ColorPicker::class => $component,
+                Select::class => $component,
             ]) ?? null;
         }
 
@@ -263,7 +286,7 @@ trait HasTableViewFormComponents
         return $component;
     }
 
-    protected function getExtraFormComponentBefore(string $componentName): null|Field|Component
+    protected function getExtraFormComponentBefore(string $componentName): null | Field | Component
     {
         return $this->extraFormComponents[$componentName] ?? null;
     }
